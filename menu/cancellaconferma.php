@@ -1,0 +1,79 @@
+<?php
+require 'connessione.php';
+
+// Ottengo i dati per la conferma della cancellazione.
+try {
+    $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
+    $sql = 'SELECT * FROM prodotto where id = :id';
+    $stm = $pdo->prepare($sql);
+
+    $stm->bindparam("id", $_GET['id']);
+    $stm->execute();
+    $numRighe = $stm->rowCount();
+
+    if ($numRighe == 0) {
+        $msgErrore = 'Dato non trovato.';
+    } else {
+        $ris = $stm->fetchAll(PDO::FETCH_ASSOC);
+        $r = $ris[0];
+        $msgErrore = "nessun errore";
+        //print_r($ris);
+    }
+} catch (PDOException $e) {
+    $msgErrore = $e->getMessage();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza</title>
+    <link rel="icon" type="image/x-icon"
+        href="data:image/png;base64,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">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+
+<body>
+    <!-- Banner -->
+    <div class="w3-container w3-red w3-xlarge">
+        <p><i class="fa fa-users"></i> Pizza</p>
+    </div>
+
+    <!-- Banner per l'errore -->
+    <?php if ($msgErrore != 'nessun errore'):?>
+        <div>
+            <?= $msgErrore?>
+        </div>
+    <?php endif?>
+
+    <!-- Riepilogo di conferma -->
+    <?php if ($msgErrore == 'nessun errore'):?>
+        <div class="w3-row">
+            <div class="w3-col w3-container l3 m3 w3-hide-small"></div>
+
+            <div class="w3-col w3-container l6 m8 s12">
+                <div class="w3-card-2 w3-container w3-light-grey w3-margin">
+                    <h2 class="w3-center">Sei sicuro di voler eliminare? <i class="fa-solid fa-user-minus"></i></h2>
+
+                    <p class="w3-large">
+                        <i class="fa-regular fas fa-pizza-slice"></i> <?= $r['nome']?><br>
+                        <i class="fa-regular fa fa-dollar"></i> <?= $r['prezzo']?><br>
+                        <i class="fa-solid fa-pizza-slice"></i> <?= $r['tipologia']?><br>
+                        <i class="fa-solid fa-plus"></i> <?= $r['aggiunta']?><br>
+                        <i class="fa-solid fa-pizza-slice"></i> <?= $r['allergeni']?>
+                    </p>
+                    <a href="cancella.php?id=<?= $r['id']?>" class="w3-button w3-block w3-large w3-red"><i class="fa-solid fa-trash-can"></i> Elimina</a>
+                    <a href="." class="w3-button w3-block w3-large w3-margin-bottom w3-light-gray"><i class="fa-solid fa-delete-left"></i> Torna all'elenco</a>
+                </div>
+            </div>
+
+            <div class="w3-col w3-container l3 m1 w3-hide-small"></div>
+        </div>      
+    <?php endif?>
+
+</body>
+</html>
