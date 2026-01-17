@@ -17,7 +17,7 @@ else{
         $stm->bindparam("p", $_POST['prezzo']);
         $stm->bindparam("t", $_POST['tipologia']);
         $stm->bindparam("agg", $_POST['aggiunta']);
-        $stm->bindparam("all", $_POST['allergeni']);
+        $stm->bindparam("agg", $_POST['allergeni']);
         $stm->execute();
         $numRighe = $stm->rowCount();
 

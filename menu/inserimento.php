@@ -30,6 +30,17 @@
                 class="w3-container w3-card-2 w3-light-grey w3-text-blue w3-margin">
                 <h2 class="w3-center">Inserisci una nuova pizza<i class="fa-solid fa-user-plus"></i></h2>
 
+
+
+                <label>Tipologia prodotto</label>
+                <select name="tipologia_prodotto" id="tipologia_prodotto" class="w3-select" onchange="mostraCampiPizza()">
+                    <option value="">-- Seleziona --</option>
+                    <option value="pizza">Pizza</option>
+                    <option value="bibita">Bibita</option>
+                    <option value="dolce">Dolce</option>
+                    <option value="contorno">Contorno</option>
+                </select>
+
                 <div class="w3-row w3-section">
                     <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-regular fa-user"></i></div>
                     <div class="w3-rest">
@@ -38,32 +49,26 @@
                     </div>
                 </div>
 
-                <div class="w3-row w3-section">
-                    <div class="w3-col" style="width:60px">&nbsp;</div>
+                  <div class="w3-row w3-section">
+                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-regular fa-user"></i></div>
                     <div class="w3-rest">
-                        <input class="w3-input w3-border" name="cognome" type="text" placeholder="Cognome">
+                        <input class="w3-input w3-border" name="prezzo" type="number" step="0.01" placeholder="Prezzo" minlength="3"
+                            required>
                     </div>
                 </div>
 
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-cake-candles"></i>
-                    </div>
-                    <div class="w3-rest">
-                        <?php // Calcolo la data massima di nascita per un calciatore registrabile
-                        $etamin = date_interval_create_from_date_string('-5 years');
-                        $maxdate = date_add(date_create('now'), $etamin);
-                        ?>
-                        <input class="w3-input w3-border" name="nascita" type="date"
-                            max="<?= date_format($maxdate, 'Y-m-d') ?>" placeholder="Data di nascita" required>
-                    </div>
-                </div>
+           
+                <div id="campiPizza" style="display:none; margin-top:10px;">
+                    <label>Tipologia pizza</label>
+                    <select name="tipo_pizza" class="w3-select">
+                        <option value="classica">Classica</option>
+                        <option value="vegetariana">Vegetariana</option>
+                    </select>
 
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-shirt"></i></div>
-                    <div class="w3-rest">
-                        <input class="w3-input w3-border" name="nmaglia" type="number" min="1" max="99"
-                            placeholder="Numero di maglia" required>
-                    </div>
+                    <label>Ingredienti</label>
+                    <input class="w3-input w3-border" type="text" name="ingredienti" id="ingredienti" placeholder="Inizia a digitare..."
+                        autocomplete="off">
+                    <div id="suggerimenti" class="w3-white w3-border"></div>
                 </div>
 
                 <button class="w3-button w3-block w3-large w3-blue"><i class="fa-solid fa-square-check"></i>
@@ -77,5 +82,32 @@
     </div>
 
 </body>
+
+<script>
+    function mostraCampiPizza() {
+        let tipo = document.getElementById("tipologia_prodotto").value;
+        document.getElementById("campiPizza").style.display = (tipo === "pizza") ? "block" : "none";
+    }
+
+       document.getElementById("ingredienti").addEventListener("keyup", function() {
+            let valore = this.value;
+            if (valore.length < 2) {
+                document.getElementById("suggerimenti").innerHTML = "";
+                return;
+            }
+
+            fetch("cerca_ingredienti.php?q=" + encodeURIComponent(valore))
+                .then(res => res.text())
+                .then(data => document.getElementById("suggerimenti").innerHTML = data);
+        });
+
+          function scegliIngrediente(nome) {
+            let input = document.getElementById("ingredienti");
+            if(input.value) input.value += ", ";
+            input.value += nome;
+            document.getElementById("suggerimenti").innerHTML = "";
+        }
+
+</script>
 
 </html>
