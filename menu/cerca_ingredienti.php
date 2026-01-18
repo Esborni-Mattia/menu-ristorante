@@ -1,20 +1,26 @@
 <?php
+// cerca_ingredienti.php
 require 'connessione.php';
 
-// Prende il parametro q passato dall'input
+try {
+    // creo PDO con charset UTF-8
+    $conn = new PDO($conn_str . ';charset=utf8', $conn_usr, $conn_psw);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Connessione fallita: " . $e->getMessage());
+}
+
+// prendo il termine di ricerca
 $q = $_GET['q'] ?? '';
+$q = "%$q%";  // già pronto per LIKE
 
-if ($q == '') exit; // se vuoto, non fare nulla
+$sql = "SELECT nome FROM ingrediente WHERE nome LIKE :q LIMIT 5";
+$stmt = $conn->prepare($sql);
+$stmt->bindParam(':q', $q, PDO::PARAM_STR);
+$stmt->execute();
 
-$pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-
-// Query per trovare ingredienti che contengono il testo digitato
-$sql = "SELECT nome FROM ingredienti WHERE nome LIKE :q LIMIT 5";
-$stm = $pdo->prepare($sql);
-$stm->execute([':q' => "%$q%"]);
-
-// Restituisce ogni ingrediente come div cliccabile
-foreach ($stm as $row) {
-    $nome = htmlspecialchars($row['nome']); // sicurezza XSS
-    echo "<div class='w3-padding w3-hover-light-grey' onclick=\"scegliIngrediente('$nome')\">$nome</div>";
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo '<div onclick="scegliIngrediente(\'' . addslashes($row['nome']) . '\')">' 
+         . htmlspecialchars($row['nome']) 
+         . '</div>';
 }

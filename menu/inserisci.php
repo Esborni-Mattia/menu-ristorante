@@ -1,155 +1,120 @@
 <?php
 require 'connessione.php';
 
-$msgErrore = "";
+try {
+    $conn = new PDO($conn_str . ';charset=utf8', $conn_usr, $conn_psw);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Connessione fallita: " . $e->getMessage());
+}
 
-if (
-    !isset($_POST['nome']) ||
-    !isset($_POST['prezzo']) ||
-    !isset($_POST['tipologia'])
-) {
-    $msgErrore = "Impossibile procedere: dati mancanti";
-} else {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    try {
-        $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Recupero dati dal form
+    $nome = trim($_POST['nome']);
+    $prezzo = floatval($_POST['prezzo']);
+    $tipologia = $_POST['tipologia'] ?? '';
 
-        /* =========================
-           1️⃣ INSERIMENTO PRODOTTO
-        ========================= */
-        $sql = "INSERT INTO prodotto (nome, prezzo, tipologia)
-                VALUES (:n, :p, :t)";
-        $stm = $pdo->prepare($sql);
-        $stm->bindParam(":n", $_POST['nome']);
-        $stm->bindParam(":p", $_POST['prezzo']);
-        $stm->bindParam(":t", $_POST['tipologia']);
-        $stm->execute();
+    // Prendo id_categoria dal nome della categoria
+    $stmtCat = $conn->prepare("SELECT id_categoria FROM categoria WHERE nome = :nome");
+    $stmtCat->execute([':nome' => $tipologia]);
+    $resCat = $stmtCat->fetch(PDO::FETCH_ASSOC);
+    $id_categoria = $resCat['id_categoria'] ?? 1; // default a 1 se non trovato
 
-        $prodotto_id = $pdo->lastInsertId();
+    // Controllo se il prodotto esiste già (stesso nome + stessa categoria)
+    $stmtCheck = $conn->prepare("
+        SELECT id_prodotto 
+        FROM prodotto 
+        WHERE LOWER(nome) = LOWER(:nome)
+        AND id_categoria = :id_categoria
+        LIMIT 1
+    ");
+    $stmtCheck->execute([
+        ':nome' => $nome,
+        ':id_categoria' => $id_categoria
+    ]);
 
-        /* =========================
-           2️⃣ INGREDIENTI
-        ========================= */
-        if (!empty($_POST['ingredienti'])) {
-
-            $ingredienti = array_map(
-                'trim',
-                explode(',', $_POST['ingredienti'])
-            );
-
-            foreach ($ingredienti as $nomeIng) {
-
-                if ($nomeIng == "") continue;
-
-                // Cerco ingrediente
-                $stm = $pdo->prepare(
-                    "SELECT id FROM ingredienti WHERE nome = ?"
-                );
-                $stm->execute([$nomeIng]);
-                $idIng = $stm->fetchColumn();
-
-                // Se non esiste lo inserisco
-                if (!$idIng) {
-                    $stm = $pdo->prepare(
-                        "INSERT INTO ingredienti (nome) VALUES (?)"
-                    );
-                    $stm->execute([$nomeIng]);
-                    $idIng = $pdo->lastInsertId();
-                }
-
-                // Collegamento prodotto - ingrediente
-                $stm = $pdo->prepare(
-                    "INSERT INTO prodotto_ingrediente
-                     (prodotto_id, ingrediente_id)
-                     VALUES (?, ?)"
-                );
-                $stm->execute([$prodotto_id, $idIng]);
-            }
-        }
-
-        /* =========================
-           3️⃣ ALLERGENI
-        ========================= */
-        if (!empty($_POST['allergeni'])) {
-
-            $allergeni = array_map(
-                'trim',
-                explode(',', $_POST['allergeni'])
-            );
-
-            foreach ($allergeni as $nomeAll) {
-
-                if ($nomeAll == "") continue;
-
-                // Cerco allergene
-                $stm = $pdo->prepare(
-                    "SELECT id FROM allergeni WHERE nome = ?"
-                );
-                $stm->execute([$nomeAll]);
-                $idAll = $stm->fetchColumn();
-
-                // Se non esiste lo inserisco
-                if (!$idAll) {
-                    $stm = $pdo->prepare(
-                        "INSERT INTO allergeni (nome) VALUES (?)"
-                    );
-                    $stm->execute([$nomeAll]);
-                    $idAll = $pdo->lastInsertId();
-                }
-
-                // Collegamento prodotto - allergene
-                $stm = $pdo->prepare(
-                    "INSERT INTO prodotto_allergene
-                     (prodotto_id, allergene_id)
-                     VALUES (?, ?)"
-                );
-                $stm->execute([$prodotto_id, $idAll]);
-            }
-        }
-
-        $msgErrore = "nessun errore";
-
-    } catch (PDOException $e) {
-        $msgErrore = $e->getMessage();
+    if ($stmtCheck->fetch()) {
+        // Prodotto già esistente → interrompo
+        header("Location: inserimento.php?errore=prodotto_esistente");
+        exit;
     }
+
+    // Inserisco prodotto
+    $stmtProd = $conn->prepare("INSERT INTO prodotto (nome, prezzo, id_categoria) VALUES (:nome, :prezzo, :id_categoria)");
+    $stmtProd->execute([
+        ':nome' => $nome,
+        ':prezzo' => $prezzo,
+        ':id_categoria' => $id_categoria
+    ]);
+    $id_prodotto = $conn->lastInsertId();
+
+    // Se è pizza, gestisco ingredienti e allergeni
+    if (strtolower($tipologia) === 'pizza') {
+
+        // --- Ingredienti ---
+        if (!empty($_POST['ingredienti'])) {
+            $ingredienti = array_map('trim', explode(",", $_POST['ingredienti']));
+            foreach ($ingredienti as $ing) {
+                // Verifico se esiste
+                $stmtIng = $conn->prepare("SELECT id_ingrediente FROM ingrediente WHERE nome = :nome");
+                $stmtIng->execute([':nome' => $ing]);
+                $resIng = $stmtIng->fetch(PDO::FETCH_ASSOC);
+
+                if ($resIng) {
+                    $id_ingrediente = $resIng['id_ingrediente'];
+                } else {
+                    // Inserisco nuovo ingrediente
+                    $stmtNew = $conn->prepare("INSERT INTO ingrediente (nome) VALUES (:nome)");
+                    $stmtNew->execute([':nome' => $ing]);
+                    $id_ingrediente = $conn->lastInsertId();
+                }
+
+                // Collego prodotto e ingrediente
+                $stmtProdIng = $conn->prepare("INSERT INTO prodotto_ingrediente (id_prodotto, id_ingrediente) VALUES (:id_prodotto, :id_ingrediente)");
+                $stmtProdIng->execute([
+                    ':id_prodotto' => $id_prodotto,
+                    ':id_ingrediente' => $id_ingrediente
+                ]);
+            }
+        }
+
+        // --- Allergeni ---
+        if (!empty($_POST['allergeni'])) {
+            $allergeni = array_map('trim', explode(",", $_POST['allergeni']));
+            foreach ($allergeni as $all) {
+                // Verifico se esiste
+                $stmtAll = $conn->prepare("SELECT id_allergene FROM allergene WHERE nome = :nome");
+                $stmtAll->execute([':nome' => $all]);
+                $resAll = $stmtAll->fetch(PDO::FETCH_ASSOC);
+
+                if ($resAll) {
+                    $id_allergene = $resAll['id_allergene'];
+                } else {
+                    // Inserisco nuovo allergene
+                    $stmtNewAll = $conn->prepare("INSERT INTO allergene (nome) VALUES (:nome)");
+                    $stmtNewAll->execute([':nome' => $all]);
+                    $id_allergene = $conn->lastInsertId();
+                }
+
+                // Collego ingrediente e allergene per tutti gli ingredienti di questo prodotto
+                $stmtIngred = $conn->prepare("SELECT id_ingrediente FROM prodotto_ingrediente WHERE id_prodotto = :id_prodotto");
+                $stmtIngred->execute([':id_prodotto' => $id_prodotto]);
+                $ingredientiProd = $stmtIngred->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($ingredientiProd as $ingProd) {
+                    $stmtIngAll = $conn->prepare("INSERT IGNORE INTO ingrediente_allergene (id_ingrediente, id_allergene) VALUES (:id_ingrediente, :id_allergene)");
+                    $stmtIngAll->execute([
+                        ':id_ingrediente' => $ingProd['id_ingrediente'],
+                        ':id_allergene' => $id_allergene
+                    ]);
+                }
+            }
+        }
+    }
+
+    // Redirect alla lista prodotti
+    header("Location: index.php");
+    exit;
 }
 ?>
-
-
-<!DOCTYPE html>
-<html lang="it">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pizze</title>
-    <link rel="icon" type="image/x-icon"
-        href="data:image/png;base64,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">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-</head>
-
-<body>
-    <!-- Banner -->
-    <div class="w3-container w3-light-blue w3-xlarge">
-        <p><i class="fa fa-users"></i> Pizze</p>
-    </div>
-
-    <div class="w3-container w3-margin">
-        <div class="w3-card-4 w3-center w3-large w3-margin w3-padding-16">
-            <div class="w3-margin">
-                <p>
-                <?php if ($msgErrore != "nessun errore"):?>
-                    <?= $msgErrore?>
-                <?php else:?>
-                    Nuova pizza inserita nel menù
-                <?php endif?>
-                </p>
-                <a href="." class="w3-button w3-block w3-green w3-padding-large">Torna all'elenco</a>
-            </div>
-        </div>
-    </div>
-
-</body>
-</html>

@@ -1,17 +1,25 @@
 <?php
+// cerca_allergeni.php
 require 'connessione.php';
 
+try {
+    $conn = new PDO($conn_str . ';charset=utf8', $conn_usr, $conn_psw);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Connessione fallita: " . $e->getMessage());
+}
+
 $q = $_GET['q'] ?? '';
-if ($q == '') exit;
+$q = "%$q%";
 
-$pdo = new PDO($conn_str, $conn_usr, $conn_psw);
+$sql = "SELECT nome FROM allergene WHERE nome LIKE :q LIMIT 5";
+$stmt = $conn->prepare($sql);
+$stmt->bindParam(':q', $q, PDO::PARAM_STR);
+$stmt->execute();
 
-$sql = "SELECT nome FROM allergeni WHERE nome LIKE :q LIMIT 5";
-$stm = $pdo->prepare($sql);
-$stm->execute([':q' => "%$q%"]);
-
-foreach ($stm as $row) {
-    $nome = htmlspecialchars($row['nome']);
-    echo "<div class='w3-padding w3-hover-light-grey' onclick=\"scegliAllergene('$nome')\">$nome</div>";
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo '<div onclick="scegliAllergene(\'' . addslashes($row['nome']) . '\')">' 
+         . htmlspecialchars($row['nome']) 
+         . '</div>';
 }
 ?>
