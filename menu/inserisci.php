@@ -1,37 +1,121 @@
 <?php
 require 'connessione.php';
 
-// Controllo parametri.
-if (!isset($_POST['nome']) || !isset($_POST['prezzo']) || !isset($_POST['tipologia']) || !isset($_POST['aggiunta']) || !isset($_POST['allergeni'])){
-    $msgErrore = 'Impossibile procedere con l\'inserimento: dati mancanti o incompleti.';
-}
-else{
+$msgErrore = "";
 
-// Inserimento.
+if (
+    !isset($_POST['nome']) ||
+    !isset($_POST['prezzo']) ||
+    !isset($_POST['tipologia'])
+) {
+    $msgErrore = "Impossibile procedere: dati mancanti";
+} else {
+
     try {
         $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-        $sql = 'INSERT INTO prodotto (nome, prezzo, tipologia, aggiunta, allergeni) VALUES (:n, :p, :t, :agg, :all)';
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        /* =========================
+           1️⃣ INSERIMENTO PRODOTTO
+        ========================= */
+        $sql = "INSERT INTO prodotto (nome, prezzo, tipologia)
+                VALUES (:n, :p, :t)";
         $stm = $pdo->prepare($sql);
-
-        $stm->bindparam("n", $_POST['nome']);
-        $stm->bindparam("p", $_POST['prezzo']);
-        $stm->bindparam("t", $_POST['tipologia']);
-        $stm->bindparam("agg", $_POST['aggiunta']);
-        $stm->bindparam("agg", $_POST['allergeni']);
+        $stm->bindParam(":n", $_POST['nome']);
+        $stm->bindParam(":p", $_POST['prezzo']);
+        $stm->bindParam(":t", $_POST['tipologia']);
         $stm->execute();
-        $numRighe = $stm->rowCount();
 
-        if ($numRighe == 0) {
-            $msgErrore = 'Nessun dato è stato registrato.';
-        } else {
-            $msgErrore = "nessun errore";
-            //print_r($ris);
+        $prodotto_id = $pdo->lastInsertId();
+
+        /* =========================
+           2️⃣ INGREDIENTI
+        ========================= */
+        if (!empty($_POST['ingredienti'])) {
+
+            $ingredienti = array_map(
+                'trim',
+                explode(',', $_POST['ingredienti'])
+            );
+
+            foreach ($ingredienti as $nomeIng) {
+
+                if ($nomeIng == "") continue;
+
+                // Cerco ingrediente
+                $stm = $pdo->prepare(
+                    "SELECT id FROM ingredienti WHERE nome = ?"
+                );
+                $stm->execute([$nomeIng]);
+                $idIng = $stm->fetchColumn();
+
+                // Se non esiste lo inserisco
+                if (!$idIng) {
+                    $stm = $pdo->prepare(
+                        "INSERT INTO ingredienti (nome) VALUES (?)"
+                    );
+                    $stm->execute([$nomeIng]);
+                    $idIng = $pdo->lastInsertId();
+                }
+
+                // Collegamento prodotto - ingrediente
+                $stm = $pdo->prepare(
+                    "INSERT INTO prodotto_ingrediente
+                     (prodotto_id, ingrediente_id)
+                     VALUES (?, ?)"
+                );
+                $stm->execute([$prodotto_id, $idIng]);
+            }
         }
+
+        /* =========================
+           3️⃣ ALLERGENI
+        ========================= */
+        if (!empty($_POST['allergeni'])) {
+
+            $allergeni = array_map(
+                'trim',
+                explode(',', $_POST['allergeni'])
+            );
+
+            foreach ($allergeni as $nomeAll) {
+
+                if ($nomeAll == "") continue;
+
+                // Cerco allergene
+                $stm = $pdo->prepare(
+                    "SELECT id FROM allergeni WHERE nome = ?"
+                );
+                $stm->execute([$nomeAll]);
+                $idAll = $stm->fetchColumn();
+
+                // Se non esiste lo inserisco
+                if (!$idAll) {
+                    $stm = $pdo->prepare(
+                        "INSERT INTO allergeni (nome) VALUES (?)"
+                    );
+                    $stm->execute([$nomeAll]);
+                    $idAll = $pdo->lastInsertId();
+                }
+
+                // Collegamento prodotto - allergene
+                $stm = $pdo->prepare(
+                    "INSERT INTO prodotto_allergene
+                     (prodotto_id, allergene_id)
+                     VALUES (?, ?)"
+                );
+                $stm->execute([$prodotto_id, $idAll]);
+            }
+        }
+
+        $msgErrore = "nessun errore";
+
     } catch (PDOException $e) {
         $msgErrore = $e->getMessage();
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="it">

@@ -33,7 +33,7 @@
 
 
                 <label>Tipologia prodotto</label>
-                <select name="tipologia_prodotto" id="tipologia_prodotto" class="w3-select" onchange="mostraCampiPizza()">
+                <select name="tipologia" id="tipologia" class="w3-select" onchange="mostraCampiPizza()">
                     <option value="">-- Seleziona --</option>
                     <option value="pizza">Pizza</option>
                     <option value="bibita">Bibita</option>
@@ -68,7 +68,12 @@
                     <label>Ingredienti</label>
                     <input class="w3-input w3-border" type="text" name="ingredienti" id="ingredienti" placeholder="Inizia a digitare..."
                         autocomplete="off">
-                    <div id="suggerimenti" class="w3-white w3-border"></div>
+                    <div id="suggerimentiIngredienti" class="w3-white w3-border"></div>
+
+                    <label>Allergeni</label>
+                    <input class="w3-input w3-border" type="text" name="allergeni" id="allergeni" placeholder="Inizia a digitare..."
+                        autocomplete="off">
+                    <div id="suggerimentiAllergeni" class="w3-white w3-border"></div>
                 </div>
 
                 <button class="w3-button w3-block w3-large w3-blue"><i class="fa-solid fa-square-check"></i>
@@ -85,28 +90,47 @@
 
 <script>
     function mostraCampiPizza() {
-        let tipo = document.getElementById("tipologia_prodotto").value;
+        let tipo = document.getElementById("tipologia").value;
         document.getElementById("campiPizza").style.display = (tipo === "pizza") ? "block" : "none";
     }
 
        document.getElementById("ingredienti").addEventListener("keyup", function() {
             let valore = this.value;
             if (valore.length < 2) {
-                document.getElementById("suggerimenti").innerHTML = "";
+                document.getElementById("suggerimentiIngredienti").innerHTML = "";
                 return;
             }
 
             fetch("cerca_ingredienti.php?q=" + encodeURIComponent(valore))
                 .then(res => res.text())
-                .then(data => document.getElementById("suggerimenti").innerHTML = data);
+                .then(data => document.getElementById("suggerimentiIngredienti").innerHTML = data);
         });
 
           function scegliIngrediente(nome) {
             let input = document.getElementById("ingredienti");
             if(input.value) input.value += ", ";
             input.value += nome;
-            document.getElementById("suggerimenti").innerHTML = "";
+            document.getElementById("suggerimentiIngredienti").innerHTML = "";
         }
+        document.getElementById("allergeni").addEventListener("keyup", function() {
+        let valore = this.value;
+        if (valore.length < 2) {
+            document.getElementById("suggerimentiAllergeni").innerHTML = "";
+            return;
+        }
+
+        fetch("cerca_allergeni.php?q=" + encodeURIComponent(valore))
+            .then(res => res.text())
+            .then(data => document.getElementById("suggerimentiAllergeni").innerHTML = data);
+        });
+
+        function scegliAllergene(nome) {
+            let input = document.getElementById("allergeni");
+            if (input.value) input.value += ", ";
+            input.value += nome;
+            document.getElementById("suggerimentiAllergeni").innerHTML = "";
+        }
+
 
 </script>
 
