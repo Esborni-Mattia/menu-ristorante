@@ -111,8 +111,8 @@ try {
                     <select class="w3-select w3-border w3-round" name="id_categoria">
                         <option value="1" <?= $r['id_categoria'] == 1 ? 'selected' : '' ?>>Pizza</option>
                         <option value="2" <?= $r['id_categoria'] == 2 ? 'selected' : '' ?>>Bibita</option>
-                        <option value="3" <?= $r['id_categoria'] == 3 ? 'selected' : '' ?>>Dolce</option>
-                        <option value="4" <?= $r['id_categoria'] == 4 ? 'selected' : '' ?>>Contorno</option>
+                        <option value="3" <?= $r['id_categoria'] == 3 ? 'selected' : '' ?>>Contorno</option>
+                        <option value="4" <?= $r['id_categoria'] == 4 ? 'selected' : '' ?>>Dolce</option>
                     </select>
                 </div>
             </div>

@@ -7,12 +7,13 @@ if (!isset($_POST['id']) || !isset($_POST['nome']) || !isset($_POST['prezzo']) |
 }
 else{
 
-// Modifica.
+    // Modifica.
     if ($_POST['prezzo'] == null) $_POST['prezzo'] = '';
     try {
         $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
         $descrizione = trim($_POST['descrizione'] ?? '');
         
+        // ---- UPDATE PRODOTTO ----
         $sql = 'UPDATE prodotto SET nome=:n, prezzo=:p, descrizione=:desc, id_categoria=:cat WHERE id_prodotto=:id';
         $stm = $pdo->prepare($sql);
 
@@ -22,49 +23,122 @@ else{
         $stm->bindparam(":desc", $descrizione);
         $stm->bindparam(":cat", $_POST['id_categoria']);
         $stm->execute();
-        $numRighe = $stm->rowCount();
+        // Non usiamo più rowCount() per mostrare messaggio di successo
 
-        if ($numRighe == 0) {
-            $msgErrore = 'Nessun dato è stato aggiornato.';
-        } else {
-            // Gestisco ingredienti
-            if (!empty($_POST['ingredienti'])) {
-                // Elimino i vecchi ingredienti
-                $sqlDelIng = 'DELETE FROM prodotto_ingrediente WHERE id_prodotto = :id';
-                $stmDelIng = $pdo->prepare($sqlDelIng);
-                $stmDelIng->bindparam(':id', $_POST['id']);
-                $stmDelIng->execute();
-                
-                // Aggiungo i nuovi ingredienti
-                $ingredienti = array_map('trim', explode(",", $_POST['ingredienti']));
-                foreach ($ingredienti as $ing) {
-                    if (empty($ing)) continue;
-                    
-                    // Verifico se esiste
-                    $stmIng = $pdo->prepare("SELECT id_ingrediente FROM ingrediente WHERE nome = :nome");
-                    $stmIng->execute([':nome' => $ing]);
-                    $resIng = $stmIng->fetch(PDO::FETCH_ASSOC);
+        $msgErrore = "nessun errore"; // ✅ Fix 1: messaggio positivo anche se il prodotto non è stato modificato
 
-                    if ($resIng) {
-                        $id_ingrediente = $resIng['id_ingrediente'];
-                    } else {
-                        // Inserisco nuovo ingrediente
-                        $stmNew = $pdo->prepare("INSERT INTO ingrediente (nome) VALUES (:nome)");
-                        $stmNew->execute([':nome' => $ing]);
-                        $id_ingrediente = $pdo->lastInsertId();
+        // ---- GESTIONE COMPLETA INGREDIENTI E ALLERGENI ----
+        if (isset($_POST['ingredienti'])) {
+            // 1. Preparo l'elenco dei nuovi ingredienti
+            $ingredienti = array_map('trim', array_filter(explode(",", $_POST['ingredienti'])));
+
+            // 2. Recupero gli ingredienti attuali del prodotto
+            $stmCurrent = $pdo->prepare("SELECT i.id_ingrediente, i.nome 
+                                         FROM ingrediente i
+                                         JOIN prodotto_ingrediente pi ON i.id_ingrediente = pi.id_ingrediente
+                                         WHERE pi.id_prodotto = :id");
+            $stmCurrent->execute([':id' => $_POST['id']]);
+            $currentIngredients = $stmCurrent->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Rimuovo ingredienti eliminati
+            foreach ($currentIngredients as $ing) {
+                if (!in_array($ing['nome'], $ingredienti)) {
+                    $id_ingrediente = $ing['id_ingrediente'];
+
+                    // Elimino collegamento prodotto-ingrediente
+                    $stmDel = $pdo->prepare("DELETE FROM prodotto_ingrediente 
+                                             WHERE id_prodotto = :id AND id_ingrediente = :iding");
+                    $stmDel->execute([':id' => $_POST['id'], ':iding' => $id_ingrediente]);
+
+                    // Controllo se l'ingrediente è collegato ad altri prodotti
+                    $stmCheck = $pdo->prepare("SELECT COUNT(*) FROM prodotto_ingrediente WHERE id_ingrediente = :iding");
+                    $stmCheck->execute([':iding' => $id_ingrediente]);
+                    if ($stmCheck->fetchColumn() == 0) {
+                        // Se nessun prodotto lo usa, elimino l'ingrediente
+                        $pdo->prepare("DELETE FROM ingrediente WHERE id_ingrediente = :iding")
+                            ->execute([':iding' => $id_ingrediente]);
+                        // Elimino anche eventuali allergeni collegati
+                        $pdo->prepare("DELETE FROM ingrediente_allergene WHERE id_ingrediente = :iding")
+                            ->execute([':iding' => $id_ingrediente]);
                     }
-
-                    // Collego prodotto e ingrediente
-                    $stmProdIng = $pdo->prepare("INSERT INTO prodotto_ingrediente (id_prodotto, id_ingrediente) VALUES (:id_prodotto, :id_ingrediente)");
-                    $stmProdIng->execute([
-                        ':id_prodotto' => $_POST['id'],
-                        ':id_ingrediente' => $id_ingrediente
-                    ]);
                 }
             }
-            
-            $msgErrore = "nessun errore";
+
+            // 4. Aggiungo i nuovi ingredienti se non già presenti
+            foreach ($ingredienti as $ing) {
+                if (empty($ing)) continue;
+
+                // Verifico se esiste
+                $stmIng = $pdo->prepare("SELECT id_ingrediente FROM ingrediente WHERE nome = :nome");
+                $stmIng->execute([':nome' => $ing]);
+                $resIng = $stmIng->fetch(PDO::FETCH_ASSOC);
+
+                if ($resIng) {
+                    $id_ingrediente = $resIng['id_ingrediente'];
+                } else {
+                    // Inserisco nuovo ingrediente
+                    $stmNew = $pdo->prepare("INSERT INTO ingrediente (nome) VALUES (:nome)");
+                    $stmNew->execute([':nome' => $ing]);
+                    $id_ingrediente = $pdo->lastInsertId();
+                }
+
+                // Collego prodotto e ingrediente se non già collegato
+                $stmCheckLink = $pdo->prepare("SELECT COUNT(*) FROM prodotto_ingrediente 
+                                               WHERE id_prodotto = :id AND id_ingrediente = :iding");
+                $stmCheckLink->execute([':id' => $_POST['id'], ':iding' => $id_ingrediente]);
+                if ($stmCheckLink->fetchColumn() == 0) {
+                    $stmProdIng = $pdo->prepare("INSERT INTO prodotto_ingrediente (id_prodotto, id_ingrediente) 
+                                                 VALUES (:id_prodotto, :id_ingrediente)");
+                    $stmProdIng->execute([':id_prodotto' => $_POST['id'], ':id_ingrediente' => $id_ingrediente]);
+                }
+
+                // ---- GESTIONE ALLERGENI ----
+                if (isset($_POST['allergeni'])) {
+                    $allergeniInput = array_map('trim', array_filter(explode(",", $_POST['allergeni'])));
+                    // Recupero allergeni attuali dell'ingrediente
+                    $stmAllCurrent = $pdo->prepare("SELECT a.nome FROM allergene a
+                                                   JOIN ingrediente_allergene ia ON a.id_allergene = ia.id_allergene
+                                                   WHERE ia.id_ingrediente = :iding");
+                    $stmAllCurrent->execute([':iding' => $id_ingrediente]);
+                    $allCurrent = $stmAllCurrent->fetchAll(PDO::FETCH_COLUMN);
+
+                    // Aggiungo nuovi allergeni
+                    foreach ($allergeniInput as $all) {
+                        if (!in_array($all, $allCurrent)) {
+                            // Verifico se allergene esiste
+                            $stmAll = $pdo->prepare("SELECT id_allergene FROM allergene WHERE nome = :nome");
+                            $stmAll->execute([':nome' => $all]);
+                            $resAll = $stmAll->fetch(PDO::FETCH_ASSOC);
+
+                            if ($resAll) {
+                                $id_allergene = $resAll['id_allergene'];
+                            } else {
+                                // Creo nuovo allergene
+                                $stmNewAll = $pdo->prepare("INSERT INTO allergene (nome) VALUES (:nome)");
+                                $stmNewAll->execute([':nome' => $all]);
+                                $id_allergene = $pdo->lastInsertId();
+                            }
+
+                            // Collego ingrediente e allergene
+                            $pdo->prepare("INSERT INTO ingrediente_allergene (id_ingrediente, id_allergene) 
+                                          VALUES (:iding, :idall)")
+                                ->execute([':iding' => $id_ingrediente, ':idall' => $id_allergene]);
+                        }
+                    }
+
+                    // Rimuovo allergeni non più presenti
+                    foreach ($allCurrent as $all) {
+                        if (!in_array($all, $allergeniInput)) {
+                            $stmDelAll = $pdo->prepare("DELETE ia FROM ingrediente_allergene ia
+                                                       JOIN allergene a ON ia.id_allergene = a.id_allergene
+                                                       WHERE ia.id_ingrediente = :iding AND a.nome = :nome");
+                            $stmDelAll->execute([':iding' => $id_ingrediente, ':nome' => $all]);
+                        }
+                    }
+                }
+            }
         }
+
     } catch (PDOException $e) {
         $msgErrore = $e->getMessage();
     }
@@ -78,8 +152,7 @@ else{
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pizze</title>
-    <link rel="icon" type="image/x-icon"
-        href="data:image/png;base64,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">
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,...">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
