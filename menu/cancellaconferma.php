@@ -4,7 +4,7 @@ require 'connessione.php';
 // Ottengo i dati per la conferma della cancellazione.
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-    $sql = 'SELECT * FROM prodotto where id = :id';
+    $sql = 'SELECT * FROM prodotto where id_prodotto = :id';
     $stm = $pdo->prepare($sql);
 
     $stm->bindparam("id", $_GET['id']);
@@ -17,7 +17,6 @@ try {
         $ris = $stm->fetchAll(PDO::FETCH_ASSOC);
         $r = $ris[0];
         $msgErrore = "nessun errore";
-        //print_r($ris);
     }
 } catch (PDOException $e) {
     $msgErrore = $e->getMessage();
@@ -60,13 +59,13 @@ try {
                     <h2 class="w3-center">Sei sicuro di voler eliminare? <i class="fa-solid fa-user-minus"></i></h2>
 
                     <p class="w3-large">
-                        <i class="fa-regular fas fa-pizza-slice"></i> <?= $r['nome']?><br>
-                        <i class="fa-regular fa fa-dollar"></i> <?= $r['prezzo']?><br>
-                        <i class="fa-solid fa-pizza-slice"></i> <?= $r['tipologia']?><br>
-                        <i class="fa-solid fa-plus"></i> <?= $r['aggiunta']?><br>
-                        <i class="fa-solid fa-pizza-slice"></i> <?= $r['allergeni']?>
+                        <strong>Nome:</strong> <?= $r['nome']?><br>
+                        <strong>Descrizione:</strong> <?= $r['descrizione']?><br>
+                        <strong>Prezzo:</strong> <?= $r['prezzo']?><br>
+                        <strong>Disponibile:</strong> <?= ($r['disponibile'] ? 'Sì' : 'No')?><br>
+                        <strong>ID Categoria:</strong> <?= $r['id_categoria']?><br>
                     </p>
-                    <a href="cancella.php?id=<?= $r['id']?>" class="w3-button w3-block w3-large w3-red"><i class="fa-solid fa-trash-can"></i> Elimina</a>
+                    <a href="cancella.php?id=<?= $r['id_prodotto']?>" class="w3-button w3-block w3-large w3-red"><i class="fa-solid fa-trash-can"></i> Elimina</a>
                     <a href="." class="w3-button w3-block w3-large w3-margin-bottom w3-light-gray"><i class="fa-solid fa-delete-left"></i> Torna all'elenco</a>
                 </div>
             </div>

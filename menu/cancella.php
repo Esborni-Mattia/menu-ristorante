@@ -4,7 +4,7 @@ require 'connessione.php';
 // Cancellazione.
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-    $sql = 'DELETE FROM prodotto where id = :id';
+    $sql = 'DELETE FROM prodotto where id_prodotto = :id';
     $stm = $pdo->prepare($sql);
 
     $stm->bindparam("id", $_GET['id']);

@@ -2,7 +2,7 @@
 require 'connessione.php';
 
 // Controllo parametri.
-if (!isset($_POST['id']) || !isset($_POST['nome']) || !isset($_POST['prezzo']) || !isset($_POST['tipologia']) || !isset($_POST['aggiunta']) || !isset($_POST['allergeni'])){
+if (!isset($_POST['id']) || !isset($_POST['nome']) || !isset($_POST['prezzo']) || !isset($_POST['id_categoria'])){
     $msgErrore = 'Impossibile procedere con l\'aggiornamento: dati mancanti o incompleti.';
 }
 else{
@@ -11,23 +11,59 @@ else{
     if ($_POST['prezzo'] == null) $_POST['prezzo'] = '';
     try {
         $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
-        $sql = 'UPDATE prodotto SET nome=:n, prezzo=:p, tipologia=:t, aggiunta=:agg, allergeni=:all WHERE id=:id';
+        $descrizione = trim($_POST['descrizione'] ?? '');
+        
+        $sql = 'UPDATE prodotto SET nome=:n, prezzo=:p, descrizione=:desc, id_categoria=:cat WHERE id_prodotto=:id';
         $stm = $pdo->prepare($sql);
 
-        $stm->bindparam("id", $_POST['id']);
-        $stm->bindparam("n", $_POST['nome']);
-        $stm->bindparam("p", $_POST['prezzo']);
-        $stm->bindparam("t", $_POST['tipologia']);
-        $stm->bindparam("agg", $_POST['aggiunta']);
-        $stm->bindparam("all", $_POST['allergeni']);
+        $stm->bindparam(":id", $_POST['id']);
+        $stm->bindparam(":n", $_POST['nome']);
+        $stm->bindparam(":p", $_POST['prezzo']);
+        $stm->bindparam(":desc", $descrizione);
+        $stm->bindparam(":cat", $_POST['id_categoria']);
         $stm->execute();
         $numRighe = $stm->rowCount();
 
         if ($numRighe == 0) {
             $msgErrore = 'Nessun dato è stato aggiornato.';
         } else {
+            // Gestisco ingredienti
+            if (!empty($_POST['ingredienti'])) {
+                // Elimino i vecchi ingredienti
+                $sqlDelIng = 'DELETE FROM prodotto_ingrediente WHERE id_prodotto = :id';
+                $stmDelIng = $pdo->prepare($sqlDelIng);
+                $stmDelIng->bindparam(':id', $_POST['id']);
+                $stmDelIng->execute();
+                
+                // Aggiungo i nuovi ingredienti
+                $ingredienti = array_map('trim', explode(",", $_POST['ingredienti']));
+                foreach ($ingredienti as $ing) {
+                    if (empty($ing)) continue;
+                    
+                    // Verifico se esiste
+                    $stmIng = $pdo->prepare("SELECT id_ingrediente FROM ingrediente WHERE nome = :nome");
+                    $stmIng->execute([':nome' => $ing]);
+                    $resIng = $stmIng->fetch(PDO::FETCH_ASSOC);
+
+                    if ($resIng) {
+                        $id_ingrediente = $resIng['id_ingrediente'];
+                    } else {
+                        // Inserisco nuovo ingrediente
+                        $stmNew = $pdo->prepare("INSERT INTO ingrediente (nome) VALUES (:nome)");
+                        $stmNew->execute([':nome' => $ing]);
+                        $id_ingrediente = $pdo->lastInsertId();
+                    }
+
+                    // Collego prodotto e ingrediente
+                    $stmProdIng = $pdo->prepare("INSERT INTO prodotto_ingrediente (id_prodotto, id_ingrediente) VALUES (:id_prodotto, :id_ingrediente)");
+                    $stmProdIng->execute([
+                        ':id_prodotto' => $_POST['id'],
+                        ':id_ingrediente' => $id_ingrediente
+                    ]);
+                }
+            }
+            
             $msgErrore = "nessun errore";
-            //print_r($ris);
         }
     } catch (PDOException $e) {
         $msgErrore = $e->getMessage();
