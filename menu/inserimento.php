@@ -26,11 +26,11 @@ $allergeni_val = $_POST['allergeni'] ?? '';
         #suggerimentiIngredienti, #suggerimentiAllergeni { max-height: 150px; overflow-y: auto; }
     </style>
 </head>
-<body>
+<body class="w3-black">
 
 <!-- Banner -->
-<div class="w3-container w3-light-blue w3-xlarge w3-padding-16">
-    <p class="w3-center w3-"><i class="fa fa-utensils"></i> Inserisci Prodotto</p>
+<div class="w3-container w3-blue w3-xlarge w3-padding-16">
+    <p class="w3-center " style="font-weight: 600; color: var(--primary)"><i class="fa fa-utensils"></i> Inserisci Prodotto</p>
 </div>
 
 <div class="w3-padding-16 w3-center">
