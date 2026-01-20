@@ -1,0 +1,11 @@
+- Sistemata aggiunta: corretto funzionamento della cerca ingredienti e allergeni, aggiunto campo descrizione mancante, sistemata gestione prodotto identico/troppo simile, nuove categorie
+
+- Sistemata modifica: implementata ricerca ingredienti e allergeni come in inserimento, correzione di bug (informazioni nei campi mancanti, da inserire manualmente, che rottura di balle)
+
+- Sistemata interfaccia utente: abbellita grafica, aggiunta nav bar
+
+- Sistemata interfaccia QR code: abbellita grafica, QR funzionante su qualsiasi PC, stampabile pure :)
+
+- Altro che non ricordo
+
+TODO: sistemare grafiche modifica, elimina, visualizza gestore, fare documentazione (README.md)

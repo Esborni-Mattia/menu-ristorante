@@ -143,6 +143,9 @@ try {
     // ------------------------------------------------------------------
     // 2. GESTIONE CARICAMENTO DATI (GET o dopo POST)
     // ------------------------------------------------------------------
+    // Se non abbiamo i dati dal POST (quindi è un primo caricamento GET) o se vogliamo ricaricarli freschi
+    // Nota: Se abbiamo appena fatto POST con successo, i valori nelle variabili sono già aggiornati sopra.
+    // Ma se è una GET pura, dobbiamo caricarli.
     
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
         $id_prodotto = $_GET['id'];
@@ -273,7 +276,7 @@ try {
                     <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-list"></i></div>
                     <div class="w3-rest">
                         <label>Tipologia</label>
-                        <select class="w3-select w3-border w3-round" name="id_categoria" id="id_categoria" onchange="mostraCampi()">
+                        <select class="w3-select w3-border w3-round" name="id_categoria">
                             <option value="1" <?= $categoria_val == 1 ? 'selected' : '' ?>>Pizza Classica</option>
                             <option value="2" <?= $categoria_val == 2 ? 'selected' : '' ?>>Pizza Gustosa</option>
                             <option value="3" <?= $categoria_val == 3 ? 'selected' : '' ?>>Pizza Speciale</option>
@@ -295,31 +298,26 @@ try {
                     </div>
                 </div>
                 
-                <!-- Wrapper per campi opzionali -->
-                <div id="campiOpzionali" style="display:none;">
-                    <!-- Ingredienti -->
-                    <div class="w3-row w3-section">
-                        <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-plus"></i></div>
-                        <!-- FIX: Uso w3-col con larghezza calcolata invece di w3-rest per evitare overflow:hidden -->
-                        <div class="w3-col" style="width: calc(100% - 60px);">
-                            <label>Ingredienti</label>
-                            <div class="autocomplete-container">
-                                <input class="w3-input w3-border w3-round" type="text" name="ingredienti" id="ingredienti" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($ingredienti_val) ?>">
-                                <div id="suggerimentiIngredienti" class="w3-white w3-border"></div>
-                            </div>
+                <!-- Ingredienti -->
+                <div class="w3-row w3-section">
+                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-plus"></i></div>
+                    <div class="w3-rest">
+                        <label>Ingredienti</label>
+                        <div class="autocomplete-container">
+                            <input class="w3-input w3-border w3-round" type="text" name="ingredienti" id="ingredienti" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($ingredienti_val) ?>">
+                            <div id="suggerimentiIngredienti" class="w3-white w3-border"></div>
                         </div>
                     </div>
-                    
-                    <!-- Allergeni -->
-                    <div class="w3-row w3-section">
-                        <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-triangle-exclamation"></i></div>
-                        <!-- FIX: Uso w3-col con larghezza calcolata invece di w3-rest per evitare overflow:hidden -->
-                        <div class="w3-col" style="width: calc(100% - 60px);">
-                            <label>Allergeni</label>
-                            <div class="autocomplete-container">
-                                <input class="w3-input w3-border w3-round" type="text" name="allergeni" id="allergeni" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($allergeni_val) ?>">
-                                <div id="suggerimentiAllergeni" class="w3-white w3-border"></div>
-                            </div>
+                </div>
+                
+                <!-- Allergeni -->
+                <div class="w3-row w3-section">
+                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="w3-rest">
+                        <label>Allergeni</label>
+                        <div class="autocomplete-container">
+                            <input class="w3-input w3-border w3-round" type="text" name="allergeni" id="allergeni" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($allergeni_val) ?>">
+                            <div id="suggerimentiAllergeni" class="w3-white w3-border"></div>
                         </div>
                     </div>
                 </div>
@@ -334,28 +332,6 @@ try {
     <?php endif; ?>
 
 <script>
-// ---------------------------
-// GESTIONE VISIBILITÀ CAMPI
-// ---------------------------
-function mostraCampi() {
-    let select = document.getElementById("id_categoria");
-    let container = document.getElementById("campiOpzionali");
-    let val = select.value;
-    
-    // ID Categorie che mostrano ingredienti/allergeni:
-    // 1,2,3 (Pizzas), 7 (Dolce), 8 (Contorno)
-    let categorieVisibili = ["1", "2", "3", "7", "8"];
-    
-    if (categorieVisibili.includes(val)) {
-        container.style.display = "block";
-    } else {
-        container.style.display = "none";
-    }
-}
-
-// Esegui al caricamento
-window.addEventListener('DOMContentLoaded', mostraCampi);
-
 // ---------------------------
 // GESTIONE AUTOCOMPLETE INGREDIENTI
 // ---------------------------

@@ -1,5 +1,4 @@
 <?php
-// cerca_allergeni.php
 require 'connessione.php';
 
 try {
@@ -10,16 +9,23 @@ try {
 }
 
 $q = $_GET['q'] ?? '';
-$q = "%$q%";
 
-$sql = "SELECT nome FROM allergene WHERE nome LIKE :q LIMIT 5";
+// MODIFICA IMPORTANTE: Cerca solo all'inizio della parola
+$q = "$q%"; 
+
+$sql = "SELECT nome FROM allergene WHERE nome LIKE :q ORDER BY nome ASC LIMIT 5";
+
 $stmt = $conn->prepare($sql);
 $stmt->bindParam(':q', $q, PDO::PARAM_STR);
 $stmt->execute();
 
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    echo '<div onclick="scegliAllergene(\'' . addslashes($row['nome']) . '\')">' 
-         . htmlspecialchars($row['nome']) 
-         . '</div>';
+$risultati = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (count($risultati) > 0) {
+    foreach ($risultati as $row) {
+        echo '<div onclick="scegliAllergene(\'' . addslashes($row['nome']) . '\')">' 
+             . htmlspecialchars($row['nome']) 
+             . '</div>';
+    }
 }
 ?>

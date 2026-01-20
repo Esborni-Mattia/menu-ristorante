@@ -218,7 +218,7 @@ try {
                     <i class="fa <?= $r['disponibile'] ? 'fa-eye' : 'fa-eye-slash' ?>"></i>
                 </a>
 
-                <a href="modificaedit.php?id=<?= $r['id_prodotto'] ?>" class="btn-action btn-edit" title="Modifica">
+                <a href="modifica.php?id=<?= $r['id_prodotto'] ?>" class="btn-action btn-edit" title="Modifica">
                     <i class="fa fa-pen-to-square"></i>
                 </a>
                 
