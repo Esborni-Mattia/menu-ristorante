@@ -103,7 +103,7 @@
             </p>
             
             <p class="w3-text-grey">
-                Inquadra il codice con la fotocamera<br>del tuo smartphone per ordinare.
+                Inquadra il codice con la fotocamera<br>del tuo smartphone per visualizzare il menu.
             </p>
 
             <!-- Immagine QR -->
@@ -126,7 +126,7 @@
         <!-- Footer / Azioni -->
         <div class="w3-container w3-border-top w3-light-grey w3-padding w3-center w3-round-large" style="border-top-left-radius: 0; border-top-right-radius: 0;">
             <button onclick="window.print()" class="w3-button w3-white w3-border w3-border-grey w3-round w3-hover-red no-print">
-                <i class="fa fa-print"></i> Stampa cavaliere da tavolo
+                <i class="fa fa-print"></i> Stampa QR Code
             </button>
         </div>
 

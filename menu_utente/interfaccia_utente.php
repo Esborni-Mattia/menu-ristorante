@@ -270,23 +270,23 @@ foreach ($prodotti as $p) {
                             <div class="prod-nome"><?= htmlspecialchars($p['nome']) ?></div>
                             
                             <?php if(!empty($p['descrizione'])): ?>
-                                <div class="prod-desc"><?= htmlspecialchars($p['descrizione']) ?></div>
+                                <div class="prod-desc">Descrizione: <?= htmlspecialchars($p['descrizione']) ?></div>
                             <?php endif; ?>
 
                             <?php if(!empty($p['ingredienti'])): ?>
-                                <div class="prod-ingr"><?= htmlspecialchars($p['ingredienti']) ?></div>
+                                <div class="prod-ingr">Ingredienti: <?= htmlspecialchars($p['ingredienti']) ?></div>
                             <?php endif; ?>
 
                             <?php if(!empty($p['allergeni'])): ?>
                                 <div class="allergeni-pill">
-                                    <i class="fa fa-triangle-exclamation"></i> <?= htmlspecialchars($p['allergeni']) ?>
+                                    <i class="fa fa-triangle-exclamation">Allergeni: </i> <?= htmlspecialchars($p['allergeni']) ?>
                                 </div>
                             <?php endif; ?>
                         </div>
 
                         <!-- Colonna Destra: Prezzo -->
                         <div class="w3-col s3 prezzo-container">
-                            <div class="prezzo-tag">€<?= number_format($p['prezzo'], 2) ?></div>
+                            <div class="prezzo-tag"><?= number_format($p['prezzo'], 2) ?>€</div>
                         </div>
                     </div>
                 </div>

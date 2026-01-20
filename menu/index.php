@@ -17,15 +17,37 @@ if (isset($_GET['toggle']) && is_numeric($_GET['toggle'])) {
     }
 }
 
+// --- CARICAMENTO CATEGORIE ---
+$categorie = [];
+try {
+    $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql_cat = 'SELECT id_categoria, nome FROM categoria ORDER BY nome ASC';
+    $stm_cat = $pdo->prepare($sql_cat);
+    $stm_cat->execute();
+    $categorie = $stm_cat->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $msgErrore = "Errore categorie: " . $e->getMessage();
+}
+
 // --- CONFIGURAZIONE PAGINAZIONE ---
-$pag_numero = 0; $pag_voci = 30; $pag_offset = 0; $pag_totali = 0; $msgErrore = 'nessun errore';
+$pag_numero = 0; $pag_voci = 10; $pag_offset = 0; $pag_totali = 0; $msgErrore = 'nessun errore';
+$categoria_filtro = isset($_GET['cat']) ? (int)$_GET['cat'] : null;
 
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql_count = 'SELECT count(*) FROM prodotto';
-    $stm = $pdo->prepare($sql_count);
-    $stm->execute();
+    
+    if ($categoria_filtro) {
+        $sql_count = 'SELECT count(*) FROM prodotto WHERE id_categoria = :cat';
+        $stm = $pdo->prepare($sql_count);
+        $stm->execute([':cat' => $categoria_filtro]);
+    } else {
+        $sql_count = 'SELECT count(*) FROM prodotto';
+        $stm = $pdo->prepare($sql_count);
+        $stm->execute();
+    }
+    
     $num_record = $stm->fetchColumn();
     $pag_totali = ceil($num_record / $pag_voci);
 
@@ -34,13 +56,26 @@ try {
     }
     $pag_offset = $pag_numero * $pag_voci;
 
-    $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
-            FROM prodotto p
-            LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
-            ORDER BY p.nome ASC LIMIT :voci OFFSET :offset';
-    $stm = $pdo->prepare($sql);
-    $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
-    $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
+    if ($categoria_filtro) {
+        $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
+                FROM prodotto p
+                LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
+                WHERE p.id_categoria = :cat
+                ORDER BY p.nome ASC LIMIT :voci OFFSET :offset';
+        $stm = $pdo->prepare($sql);
+        $stm->bindValue(':cat', $categoria_filtro, PDO::PARAM_INT);
+        $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
+        $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
+    } else {
+        $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
+                FROM prodotto p
+                LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
+                ORDER BY p.nome ASC LIMIT :voci OFFSET :offset';
+        $stm = $pdo->prepare($sql);
+        $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
+        $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
+    }
+    
     $stm->execute();
     $ris = $stm->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -53,194 +88,398 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Menu | Admin</title>
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <title>Gestione Menu | Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&family=Oswald:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary:rgb(30, 94, 159);
-            --accent: #10b981;
-            --bg:rgb(19, 14, 10);
-            --text-main: #1e293b;
-            --text-muted:rgb(0, 0, 0);
-        }
-
+        /* --- STILI GENERALI --- */
         body { 
-            background-color: var(--bg); 
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+            background-color: #faf9f6; 
+            font-family: 'Roboto', sans-serif; 
+            color: #333;
+            margin: 0;
+            padding: 0;
         }
-
-        .header-admin {
-            background-color: white;
-            border-bottom: 1px solidrgb(240, 233, 226);
-            padding: 20px 0;
-            margin-bottom: 30px;
-        }
-
-        .container-lista { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
         
-        /* Card Prodotto Professionale */
-        .prodotto-row {
-            background: white;
-            border-radius: 12px;
-            padding: 16px 24px;
-            margin-bottom: 12px;
+        h1, h2, h3, .prezzo-tag { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+
+        /* --- HEADER --- */
+        .hero-header {
+            background-color: #b71c1c; 
+            color: white;
+            padding: 30px 16px;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .hero-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        .hero-header p {
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        /* --- CONTAINER --- */
+        .container-lista {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* --- MENU DI NAVIGAZIONE --- */
+        .scroll-nav-container {
+            position: sticky;
+            top: 0;
+            background: #faf9f6;
+            z-index: 1000;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .scroll-nav {
             display: flex;
             align-items: center;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 10px;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        .scroll-nav::-webkit-scrollbar { display: none; }
+        
+        .scroll-nav::after {
+            content: '';
+            min-width: 20px;
+            height: 1px;
+        }
+
+        /* STILE TASTI NAVIGAZIONE */
+        .nav-chip {
+            display: inline-block;
+            flex: 0 0 auto; 
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 8px 16px;
+            margin-right: 8px;
+            font-size: 14px;
+            color: #555;
+            text-decoration: none;
+            transition: 0.3s;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .nav-chip:hover, .nav-chip.active {
+            background: #b71c1c;
+            color: white;
+            border-color: #b71c1c;
+        }
+
+        .btn-add-admin {
+            display: inline-block;
+            background: #b71c1c;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+            margin-right: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-add-admin:hover {
+            background: #8b1515;
+        }
+
+        @media (min-width: 700px) {
+            .scroll-nav {
+                flex-wrap: wrap;
+                justify-content: center;
+                overflow-x: visible;
+                white-space: normal;
+            }
+            .scroll-nav::after { display: none; }
+            .nav-chip { margin-bottom: 8px; }
+        }
+
+        /* --- INTESTAZIONE CATEGORIA --- */
+        .cat-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #b71c1c;
+            color: #2c3e50;
+            scroll-margin-top: 140px;
+        }
+
+        /* --- CARD PRODOTTO --- */
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            border: 1px solid #eee;
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
             justify-content: space-between;
-            border: 1px solidrgb(188, 124, 15);
-            transition: all 0.2s ease;
         }
+        .product-card:active { transform: scale(0.98); }
 
-        .prodotto-row:hover {
-            border-color: var(--accent);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+        .prod-info { flex: 1; }
 
-        .testi-prodotto { flex: 1; }
+        .prod-nome { font-size: 1.15rem; font-weight: 600; color: #222; margin: 0 0 8px 0; }
+        .prod-desc { font-size: 0.9rem; color: #777; margin-bottom: 6px; line-height: 1.4; }
+        .prod-ingr { font-size: 0.85rem; color: #555; font-style: italic; }
 
-        .nome-titolo {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-main);
+        /* Prezzo */
+        .prezzo-container { text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; padding-left: 20px; }
+        .prezzo-tag { 
+            font-size: 1.2rem; 
+            color: #b71c1c; 
+            font-weight: 600; 
             margin: 0;
-            letter-spacing: -0.02em;
         }
 
-        .categoria-sottotitolo {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 2px;
-            display: block;
+        /* Allergeni */
+        .allergeni-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            background-color: #fff3e0; 
+            color: #e65100;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-weight: 500;
         }
 
-        .prezzo-info {
-            font-weight: 600;
-            color: var(--primary);
-            font-size: 1.05rem;
-            padding: 0 30px;
-            min-width: 120px;
-            text-align: right;
+        /* Azioni Admin */
+        .azioni-admin {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
         }
 
-        /* Bottoni Minimal */
-        .azioni-gruppo { display: flex; gap: 10px; }
-
-        .btn-action {
-            width: 38px;
-            height: 38px;
+        .btn-admin {
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: 6px;
             text-decoration: none;
-            background:rgba(33, 164, 230, 0.62);
-            color: var(--text-muted);
-            transition: all 0.2s;
             border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
         }
 
-        .btn-action:hover {
-            background: var(--primary);
-            color: white;
+        .btn-toggle {
+            background: #f0f0f0;
+            color: #666;
         }
 
-        .btn-edit:hover { background: #3b82f6; }
-        .btn-delete:hover { background: #ef4444; }
-        .btn-toggle-on { color: var(--accent); background: #ecfdf5; }
-        .btn-toggle-on:hover { background: var(--accent); color: white; }
+        .btn-toggle.active {
+            background: #ecfdf5;
+            color: #10b981;
+        }
 
+        .btn-toggle:hover { background: #d0d0d0; }
+        .btn-toggle.active:hover { background: #10b981; color: white; }
+
+        .btn-edit {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .btn-edit:hover { background: #1976d2; color: white; }
+
+        .btn-delete {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .btn-delete:hover { background: #d32f2f; color: white; }
+
+        /* Badge disponibilità */
         .badge-status {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
             display: inline-block;
-            margin-right: 8px;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+            font-weight: 600;
         }
 
-        .w3-button.btn-primary {
-            background-color: var(--primary) !important;
-            color: white !important;
+        .badge-available {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .badge-unavailable {
+            background: #ef9a9a;
+            color: #c62828;
+        }
+
+        /* Footer */
+        .footer-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #aaa;
+            padding: 30px 0 150px 0;
+        }
+
+        /* Paginazione */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 30px 0;
+            flex-wrap: wrap;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #faf9f6;
+            border-top: 2px solid #eee;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+            z-index: 999;
+        }
+
+        /* Spazio in fondo al body per evitare che il contenuto sia coperto dalla paginazione fissa */
+        body.has-pagination {
+            padding-bottom: 120px;
+        }
+
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #666;
+            transition: 0.2s;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .pagination a:hover {
+            background: #b71c1c;
+            color: white;
+            border-color: #b71c1c;
+        }
+
+        .pagination .active {
+            background: #b71c1c;
+            color: white;
+            border-color: #b71c1c;
+        }
+
+        /* Messaggi errore */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px 16px;
             border-radius: 8px;
-            font-weight: 600;
-            padding: 10px 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
         }
     </style>
 </head>
-<body>
+<body class="has-pagination">
 
-<div class="header-admin">
-    <div class="container-lista w3-cell-row">
-        <div class="w3-cell w3-cell-middle">
-            <h2 class="w3-margin-0" style="font-weight: 600; color: var(--primary)">Gestione Menu</h2>
-            <p class="w3-margin-0" style="color: var(--text-muted); font-size: 0.9rem;">
-                Dashboard amministrativa &bull; <?= $num_record ?> piatti totali
-            </p>
-        </div>
-        <div class="w3-cell w3-cell-middle w3-right-align">
-            <a href="inserimento.php" class="w3-button btn-primary">
-                <i class="fa fa-plus w3-small"></i> NUOVO PRODOTTO
+<!-- HERO HEADER -->
+<div class="hero-header">
+    <h1>Gestione Menu</h1>
+    <p>Dashboard amministrativa &bull; <?= $num_record ?> piatti totali</p>
+</div>
+
+<!-- BARRA NAVIGAZIONE CATEGORIE -->
+<div class="container-lista">
+    <div class="scroll-nav-container">
+        <div class="scroll-nav">
+            <a href="index.php" class="nav-chip <?= !$categoria_filtro ? 'active' : '' ?>">
+                <i class="fas fa-list"></i> TUTTI
+            </a>
+            <?php foreach ($categorie as $cat): ?>
+                <a href="index.php?cat=<?= $cat['id_categoria'] ?>" 
+                   class="nav-chip <?= ($categoria_filtro == $cat['id_categoria']) ? 'active' : '' ?>">
+                    <?= htmlspecialchars($cat['nome']) ?>
+                </a>
+            <?php endforeach ?>
+            <a href="inserimento.php" class="btn-add-admin">
+                <i class="fas fa-plus"></i> NUOVO
             </a>
         </div>
     </div>
-</div>
 
-<div class="container-lista">
     <?php if ($msgErrore != 'nessun errore'): ?>
-        <div class="w3-panel w3-red w3-round-large w3-small"><?= $msgErrore ?></div>
+        <div class="error-message"><?= htmlspecialchars($msgErrore) ?></div>
     <?php endif ?>
 
-    <?php foreach ($ris as $r): ?>
-        <div class="prodotto-row">
-            
-            <div class="testi-prodotto">
-                <h3 class="nome-titolo">
-                    <span class="badge-status" style="background-color: <?= $r['disponibile'] ? 'var(--accent)' : '#cbd5e1' ?>"></span>
-                    <?= htmlspecialchars($r['nome']) ?>
-                </h3>
-                <span class="categoria-sottotitolo">
-                    <?= htmlspecialchars($r['categoria'] ?? 'Non classificato') ?>
-                </span>
+    <!-- PRODOTTI -->
+    <div>
+        <?php foreach ($ris as $r): ?>
+            <div class="product-card">
+                <div class="prod-info">
+                    <h3 class="prod-nome">
+                        <?= htmlspecialchars($r['nome']) ?>
+                    </h3>
+                    <span class="prod-desc">
+                        <?= htmlspecialchars($r['categoria'] ?? 'Non classificato') ?>
+                    </span>
+                    <div class="badge-status <?= $r['disponibile'] ? 'badge-available' : 'badge-unavailable' ?>">
+                        <?= $r['disponibile'] ? '✓ DISPONIBILE' : '✗ NON DISPONIBILE' ?>
+                    </div>
+                    <div class="azioni-admin">
+                        <a href="index.php?toggle=<?= $r['id_prodotto'] ?>" 
+                           class="btn-admin btn-toggle <?= $r['disponibile'] ? 'active' : '' ?>" 
+                           title="Cambia disponibilità">
+                            <i class="fa <?= $r['disponibile'] ? 'fa-eye' : 'fa-eye-slash' ?>"></i>
+                        </a>
+                        <a href="modifica.php?id=<?= $r['id_prodotto'] ?>" class="btn-admin btn-edit" title="Modifica">
+                            <i class="fa fa-pen-to-square"></i>
+                        </a>
+                        <a href="cancellaconferma.php?id=<?= $r['id_prodotto'] ?>" class="btn-admin btn-delete" title="Elimina">
+                            <i class="fa fa-trash-can"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="prezzo-container">
+                    <p class="prezzo-tag">€ <?= number_format($r['prezzo'], 2, ',', '.') ?></p>
+                </div>
             </div>
-
-            <div class="prezzo-info">
-                € <?= number_format($r['prezzo'], 2, ',', '.') ?>
-            </div>
-
-            <div class="azioni-gruppo">
-                <a href="index.php?toggle=<?= $r['id_prodotto'] ?>" 
-                   class="btn-action <?= $r['disponibile'] ? 'btn-toggle-on' : '' ?>" 
-                   title="Visibilità">
-                    <i class="fa <?= $r['disponibile'] ? 'fa-eye' : 'fa-eye-slash' ?>"></i>
-                </a>
-
-                <a href="modifica.php?id=<?= $r['id_prodotto'] ?>" class="btn-action btn-edit" title="Modifica">
-                    <i class="fa fa-pen-to-square"></i>
-                </a>
-                
-                <a href="cancellaconferma.php?id=<?= $r['id_prodotto'] ?>" class="btn-action btn-delete" title="Elimina">
-                    <i class="fa fa-trash-can"></i>
-                </a>
-            </div>
-
-        </div>
-    <?php endforeach ?>
-
-    <div class="w3-center w3-padding-48">
-        <div class="w3-bar">
-            <?php for ($i = 1; $i <= $pag_totali; $i++): ?>
-                <a href="index.php?pag=<?= $i ?>" 
-                   class="w3-bar-item w3-button w3-round-large <?= ($i == $pag_numero + 1) ? 'w3-dark-grey' : 'w3-white' ?> w3-margin-right"
-                   style="border: 1px solid #e2e8f0">
-                    <?= $i ?>
-                </a>
-            <?php endfor; ?>
-        </div>
+        <?php endforeach ?>
     </div>
+
+    <!-- PAGINAZIONE -->
+    <div class="pagination">
+        <?php for ($i = 1; $i <= $pag_totali; $i++): ?>
+            <a href="index.php?pag=<?= $i ?><?= $categoria_filtro ? '&cat=' . $categoria_filtro : '' ?>"
+               class="<?= ($i == $pag_numero + 1) ? 'active' : '' ?>">
+                <?= $i ?>
+            </a>
+        <?php endfor; ?>
+    </div>
+</div>
+
+<div class="footer-info">
+    &copy; 2026 Gestione Menu Ristorante
 </div>
 
 </body>

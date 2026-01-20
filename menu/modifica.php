@@ -194,144 +194,298 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modifica Prodotto</title>
     <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFvklEQVR4nOWaSWwbZRiGBwQIhISEOHAArogTEgfEuVLAhwoOVCWO421sz19CBajlgERT0tJCm2ahabOqKdBaAdqUViWVEIuSFqFGytIkzR5n8aSpdyde4iZObb9oZjyLM6lUQLHH4pU+xaMvI/2P/+/957Vlivq/qqoHj3FFFbNMF6IWQ30gVlYTSBi/j+ylilHGMyszpZUelB7IVqUH5U0hN90ZfYMqJtlqMjC3xqGv8sowXFV5YWhf7rVfjT9PFYPoaoCvkymUN67wO6IEKjvqS5nORdqoKjxKFQVItVCWpg0Y6oK5u8MB1QZWyztiDkqrokWIkSugG+PC6+OApfUeyo74coE4/zSH5syd8VcpzYLgAOj1Izm7Q9dy/olB/7naP+Xt4evlztAzlFZEi4t2OQWY7HVD54A8bqfuo/z0smrc9Mf8GyZnpJ7SgugWxQ5ccEmvkSzFmOvLXP+0rMNwIqACMjQEw6bO2LsFBSELgKMboBtyTb8atfEw4vUHX6f5v9YawNyagH6Tf/SVHhhawxNll2KvFAaEBfhyAfYrAF0jLPzDUzF097VLIHNuH85cXYU927fWp2FsifIAOUCHvRnjt8uXLT14sjAgrFDMKGA/n7s7XHk8Hr5GJgM45lyXe5x/GsJq/1T7k6aOyMGCgZBsOW4CtiYZpLpjDaPTfgmouy+MT5pTUt/csoayY361f04FfeZL8R15A6HHY2DcmVwgN+D4HbDVCYt11IAfr3nWy8PcWfLip+4oKuozMlDbKvSHNh3XBz0wtIWH91xMvLDtIMY+D0wDPtimEuodmgLslwD6hLDYj06ncfVGBHfvCrszPetD8+UEbNm+9WQaxuaIKu6UHvWmTedWnLsv4oltBRHLPBSEYzapAmKGAPtZedwq2zfQOxKSxq1/NIhD3yTl47px67izq242mhcQsSy3l8EspNT++QugTwuLtVUD9T+uYcIl+Oeux4Nfe5exrzGliDtr0H/lx3uHF7Hzsz9RYu1CXkH46vdu7Z85wH6NizECEKnLwPlLDOwdwT/sope/JrVZ/9RmUGLv4iEKA5It06Aftql7av9MAvYL8rjtb0rht95ladzGZ/xST4QoKIjkn+EQHHMbav/0A7Y2GeiL75IYHA/yMLQWQYRx82z57OGP6+ty3LGfAFquJDQM0ieD2CZX1UCzgONnOe7QxQDCj9utAOwz6+pxGwNsTjXIm/s1CGIeDMjH9XAYjvn7aqA+wNYKlFR04a2aLujOahCEH6+pBJ8KxJ51NAJmIa3yj65dgNAmiDv7ri+kYR2L8geBFHc4/2T7hIUEoUkQ060AHAp/cEczd0RLx/WtYHGASP4Y4fwhxxn7zBrMg/6c/9VpGYQej/MxRni+eEFPxECycYaLNfREPL8g1tsr/9rsXLDkDC72TAP+LT8O6LYVxI0+ab5nN2AeCv0jEO6eB92/+eOAbjtBKOARwmI348aiNN/Ta/y7+rAe2Rz3uXCpvJ/kBSQroxdPMywOERZrwrGa4eO7NP8PBBH6Jt4fnB+ycV9xP8kniKiKJbxEWJyXxmU+BcsW/nlQ37wp7itPMl0+QUSRBewgboxI4zab5J8JW5md77uSMA3JfctwCIzCP6RQIJyqgEf3sDAzLPy58++TFmcdU8QRN5eGFXGl38P3SaFBRFWweJZhcZywSIpxJOf50+/b5I+04I+sf4hWQEQ5lvAyYXFNOS7mkbD8/FDFlfv8E59oDUQUw6KEYTEuLdi1zkNIhufi/Jw6zuu0BsKJDOBxhsXHhEVE8s/kKn8MS3F+LJrz7YtOiyCi9i7hOcKig7iRUYK8c7nXTRWjmEW8zrC4ufOHnsSuP8aK80c7yrhT1dNT3D+j+i/6G/A00WmFPz+jAAAAAElFTkSuQmCC">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&family=Oswald:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        /* --- STILI GENERALI --- */
+        body { 
+            background-color: #faf9f6; 
+            font-family: 'Roboto', sans-serif; 
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1, h2, h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+
+        /* --- HEADER --- */
+        .hero-header {
+            background-color: #b71c1c; 
+            color: white;
+            padding: 30px 16px;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .hero-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        .hero-header p {
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        /* --- CONTAINER --- */
+        .container-lista {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* --- FORM --- */
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #b71c1c;
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Autocomplete */
         #suggerimentiIngredienti, #suggerimentiAllergeni { 
             max-height: 150px; 
             overflow-y: auto; 
             position: absolute; 
             z-index: 1000; 
             background: white; 
-            width: 90%; 
-            border: 1px solid #ccc;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            border-top: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         #suggerimentiIngredienti div, #suggerimentiAllergeni div {
-            padding: 8px;
+            padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
         }
         #suggerimentiIngredienti div:hover, #suggerimentiAllergeni div:hover {
-            background-color: #f1f1f1;
+            background-color: #f5f5f5;
+            color: #b71c1c;
         }
         .autocomplete-container { position: relative; }
+
+        /* Pulsanti */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-submit, .btn-back {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-submit {
+            background: #b71c1c;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #8b1515;
+        }
+
+        .btn-back {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-back:hover {
+            background: #e0e0e0;
+        }
+
+        /* Messaggi */
+        .error-message, .success-message {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            font-weight: 500;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            border-left-color: #c62828;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left-color: #2e7d32;
+        }
+
+        .close-btn {
+            float: right;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .hidden-fields {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
     </style>
 </head>
 
 <body>
-    <!-- Banner -->
-    <div class="w3-container w3-light-blue w3-xlarge">
-        <p><i class="fa fa-pizza-slice"></i> Pizza</p>
-    </div>
 
+<!-- HERO HEADER -->
+<div class="hero-header">
+    <h1><i class="fas fa-pen-to-square"></i> Modifica Prodotto</h1>
+    <p>Aggiorna i dettagli del piatto</p>
+</div>
+
+<div class="container-lista">
     <!-- Messaggi -->
     <?php if ($msgErrore): ?>
-        <div class="w3-panel w3-red w3-display-container">
-            <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-            <p><?= $msgErrore ?></p>
+        <div class="error-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+            <strong>Attenzione!</strong> <?= htmlspecialchars($msgErrore) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($msgSuccesso): ?>
-        <div class="w3-panel w3-green w3-display-container">
-            <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-            <p><?= $msgSuccesso ?></p>
+        <div class="success-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+            <strong>Fatto!</strong> <?= htmlspecialchars($msgSuccesso) ?>
         </div>
     <?php endif; ?>
 
     <!-- Form -->
     <?php if ($id_prodotto || $msgSuccesso): ?>
-    <div class="w3-row">
-        <div class="w3-col w3-container l3 m3 s12"></div>
+        <form action="modifica.php" method="post" class="form-card">
 
-        <div class="w3-col w3-container l6 m8 s12">
-            <div class="w3-container">&nbsp;</div>
-            <form action="modifica.php" method="post" class="w3-container w3-card-2 w3-light-grey w3-text-blue w3-margin">
-                <h2 class="w3-center">Modifica Prodotto <i class="fa-solid fa-pizza-slice"></i></h2>
+            <input name="id" type="hidden" value="<?= htmlspecialchars($id_prodotto) ?>">
 
-                <input name="id" type="hidden" value="<?= htmlspecialchars($id_prodotto) ?>">
+            <!-- Nome -->
+            <div class="form-group">
+                <label for="nome"><i class="fas fa-circle-question"></i> Nome Prodotto</label>
+                <input type="text" id="nome" name="nome" minlength="3" value="<?= htmlspecialchars($nome_val) ?>" required>
+            </div>
 
-                <!-- Nome -->
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-regular fa-user"></i></div>
-                    <div class="w3-rest">
-                        <input class="w3-input w3-border" name="nome" type="text" placeholder="Nome" minlength="3" value="<?= htmlspecialchars($nome_val) ?>" required>
-                    </div>
-                </div>
+            <!-- Prezzo -->
+            <div class="form-group">
+                <label for="prezzo"><i class="fas fa-euro-sign"></i> Prezzo (€)</label>
+                <input type="number" id="prezzo" name="prezzo" step="0.01" placeholder="0.00" value="<?= htmlspecialchars($prezzo_val) ?>" required>
+            </div>
 
-                <!-- Prezzo -->
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-euro-sign"></i></div>
-                    <div class="w3-rest">
-                        <label>Prezzo (€)</label>
-                        <input class="w3-input w3-border w3-round" name="prezzo" type="number" step="0.01" placeholder="0.00" value="<?= htmlspecialchars($prezzo_val) ?>" required>
-                    </div>
-                </div>
-
-                <!-- Categoria -->
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-list"></i></div>
-                    <div class="w3-rest">
-                        <label>Tipologia</label>
-                        <select class="w3-select w3-border w3-round" name="id_categoria" id="id_categoria" onchange="mostraCampi()">
-                            <option value="1" <?= $categoria_val == 1 ? 'selected' : '' ?>>Pizza Classica</option>
-                            <option value="2" <?= $categoria_val == 2 ? 'selected' : '' ?>>Pizza Gustosa</option>
-                            <option value="3" <?= $categoria_val == 3 ? 'selected' : '' ?>>Pizza Speciale</option>
-                            <option value="4" <?= $categoria_val == 4 ? 'selected' : '' ?>>Bibita analcolica</option>
-                            <option value="5" <?= $categoria_val == 5 ? 'selected' : '' ?>>Bibita alcolica</option>
-                            <option value="6" <?= $categoria_val == 6 ? 'selected' : '' ?>>Acqua</option>
-                            <option value="7" <?= $categoria_val == 7 ? 'selected' : '' ?>>Dolce</option>
-                            <option value="8" <?= $categoria_val == 8 ? 'selected' : '' ?>>Contorno</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Descrizione -->
-                <div class="w3-row w3-section">
-                    <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-pen"></i></div>
-                    <div class="w3-rest">
-                        <label>Descrizione</label>
-                        <textarea class="w3-input w3-border w3-round" name="descrizione" placeholder="Descrizione del prodotto" rows="3" style="resize: vertical;" maxlength="200"><?= htmlspecialchars($descrizione_val) ?></textarea>
-                    </div>
-                </div>
-                
-                <!-- Wrapper per campi opzionali -->
-                <div id="campiOpzionali" style="display:none;">
+            <!-- Categoria -->
+            <div class="form-group">
+                <label for="id_categoria"><i class="fas fa-tag"></i> Tipologia</label>
+                <select name="id_categoria" id="id_categoria" onchange="mostraCampi()">
+                    <option value="1" <?= $categoria_val == 1 ? 'selected' : '' ?>>Pizza Classica</option>
+                    <option value="2" <?= $categoria_val == 2 ? 'selected' : '' ?>>Pizza Gustosa</option>
+                    <option value="3" <?= $categoria_val == 3 ? 'selected' : '' ?>>Pizza Speciale</option>
+                    <option value="4" <?= $categoria_val == 4 ? 'selected' : '' ?>>Bibita Analcolica</option>
+                    <option value="5" <?= $categoria_val == 5 ? 'selected' : '' ?>>Bibita Alcolica</option>
+                    <option value="6" <?= $categoria_val == 6 ? 'selected' : '' ?>>Acqua</option>
+                    <option value="7" <?= $categoria_val == 7 ? 'selected' : '' ?>>Dolce</option>
+                    <option value="8" <?= $categoria_val == 8 ? 'selected' : '' ?>>Contorno</option>
+                </select>
+            </div>
+            
+            <!-- Descrizione -->
+            <div class="form-group">
+                <label for="descrizione"><i class="fas fa-pen"></i> Descrizione</label>
+                <textarea id="descrizione" name="descrizione" placeholder="Descrizione del prodotto" maxlength="200"><?= htmlspecialchars($descrizione_val) ?></textarea>
+            </div>
+            
+            <!-- Wrapper per campi opzionali -->
+            <div id="campiOpzionali" style="display:none;" class="hidden-fields">
                     <!-- Ingredienti -->
-                    <div class="w3-row w3-section">
-                        <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-plus"></i></div>
-                        <!-- FIX: Uso w3-col con larghezza calcolata invece di w3-rest per evitare overflow:hidden -->
-                        <div class="w3-col" style="width: calc(100% - 60px);">
-                            <label>Ingredienti</label>
-                            <div class="autocomplete-container">
-                                <input class="w3-input w3-border w3-round" type="text" name="ingredienti" id="ingredienti" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($ingredienti_val) ?>">
-                                <div id="suggerimentiIngredienti" class="w3-white w3-border"></div>
-                            </div>
+                    <div class="form-group">
+                        <label for="ingredienti"><i class="fas fa-list"></i> Ingredienti</label>
+                        <div class="autocomplete-container">
+                            <input type="text" id="ingredienti" name="ingredienti" placeholder="Es. Pomodoro, Mozzarella..." autocomplete="off" value="<?= htmlspecialchars($ingredienti_val) ?>">
+                            <div id="suggerimentiIngredienti"></div>
                         </div>
                     </div>
                     
                     <!-- Allergeni -->
-                    <div class="w3-row w3-section">
-                        <div class="w3-col w3-center" style="width:60px"><i class="w3-xxlarge fa-solid fa-triangle-exclamation"></i></div>
-                        <!-- FIX: Uso w3-col con larghezza calcolata invece di w3-rest per evitare overflow:hidden -->
-                        <div class="w3-col" style="width: calc(100% - 60px);">
-                            <label>Allergeni</label>
-                            <div class="autocomplete-container">
-                                <input class="w3-input w3-border w3-round" type="text" name="allergeni" id="allergeni" placeholder="Inizia a digitare..." autocomplete="off" value="<?= htmlspecialchars($allergeni_val) ?>">
-                                <div id="suggerimentiAllergeni" class="w3-white w3-border"></div>
-                            </div>
+                    <div class="form-group">
+                        <label for="allergeni"><i class="fas fa-warning"></i> Allergeni</label>
+                        <div class="autocomplete-container">
+                            <input type="text" id="allergeni" name="allergeni" placeholder="Es. Glutine, Lattosio..." autocomplete="off" value="<?= htmlspecialchars($allergeni_val) ?>">
+                            <div id="suggerimentiAllergeni"></div>
                         </div>
                     </div>
-                </div>
+            </div>
 
-                <button class="w3-button w3-block w3-large w3-orange"><i class="fa-solid fa-square-check"></i> Modifica</button>
-                <a href="." class="w3-button w3-block w3-large w3-margin-bottom w3-light-gray"><i class="fa-solid fa-delete-left"></i> Torna all'elenco</a>
-            </form>
-        </div>
-
-        <div class="w3-col w3-container l3 m1 w3-hide-small"></div>
-    </div>
+            <div class="btn-group">
+                <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Modifica</button>
+                <a href="index.php" class="btn-back"><i class="fas fa-arrow-left"></i> Torna</a>
+            </div>
+        </form>
     <?php endif; ?>
+</div>
 
 <script>
 // ---------------------------
