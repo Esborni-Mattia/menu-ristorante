@@ -22,7 +22,9 @@ $categorie = [];
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql_cat = 'SELECT id_categoria, nome FROM categoria ORDER BY nome ASC';
+    // Ordino le categorie: prima quelle che iniziano con "Pizza", poi le altre
+    $sql_cat = "SELECT id_categoria, nome FROM categoria 
+                ORDER BY CASE WHEN nome LIKE 'Pizza%' THEN 0 ELSE 1 END, nome ASC";
     $stm_cat = $pdo->prepare($sql_cat);
     $stm_cat->execute();
     $categorie = $stm_cat->fetchAll(PDO::FETCH_ASSOC);
@@ -56,6 +58,7 @@ try {
     }
     $pag_offset = $pag_numero * $pag_voci;
 
+    // Recupero prodotti con nome categoria e disponibilità
     if ($categoria_filtro) {
         $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
                 FROM prodotto p
@@ -67,10 +70,12 @@ try {
         $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
         $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
     } else {
-        $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
+        // Query generica: se non filtro, ordino comunque per categoria (prima pizze) e poi nome
+        $sql = "SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
                 FROM prodotto p
                 LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
-                ORDER BY p.nome ASC LIMIT :voci OFFSET :offset';
+                ORDER BY CASE WHEN c.nome LIKE 'Pizza%' THEN 0 ELSE 1 END, c.nome ASC, p.nome ASC 
+                LIMIT :voci OFFSET :offset";
         $stm = $pdo->prepare($sql);
         $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
         $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
@@ -136,13 +141,9 @@ try {
 
         /* --- MENU DI NAVIGAZIONE --- */
         .scroll-nav-container {
-            position: sticky;
-            top: 0;
             background: #faf9f6;
-            z-index: 1000;
             padding: 10px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .scroll-nav {
@@ -151,7 +152,7 @@ try {
             overflow-x: auto;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            padding: 0 10px;
+            padding: 5px 10px;
             scrollbar-width: none; 
             -ms-overflow-style: none;
         }
@@ -185,23 +186,35 @@ try {
             border-color: #b71c1c;
         }
 
-        .btn-add-admin {
-            display: inline-block;
-            background: #b71c1c;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-family: 'Oswald', sans-serif;
-            letter-spacing: 0.5px;
-            font-size: 0.9rem;
-            margin-right: 8px;
-            transition: 0.3s;
+        /* --- BOTTONE NUOVO PRODOTTO GRANDE --- */
+        .btn-add-big-container {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .btn-add-admin:hover {
-            background: #8b1515;
+        .btn-add-big {
+            display: inline-block;
+            background: #2e7d32; /* Verde per differenziare */
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
         }
+
+        .btn-add-big:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-add-big i { margin-right: 10px; }
 
         @media (min-width: 700px) {
             .scroll-nav {
@@ -212,16 +225,6 @@ try {
             }
             .scroll-nav::after { display: none; }
             .nav-chip { margin-bottom: 8px; }
-        }
-
-        /* --- INTESTAZIONE CATEGORIA --- */
-        .cat-title {
-            margin-top: 30px;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 4px solid #b71c1c;
-            color: #2c3e50;
-            scroll-margin-top: 140px;
         }
 
         /* --- CARD PRODOTTO --- */
@@ -244,8 +247,7 @@ try {
         .prod-info { flex: 1; }
 
         .prod-nome { font-size: 1.15rem; font-weight: 600; color: #222; margin: 0 0 8px 0; }
-        .prod-desc { font-size: 0.9rem; color: #777; margin-bottom: 6px; line-height: 1.4; }
-        .prod-ingr { font-size: 0.85rem; color: #555; font-style: italic; }
+        .prod-desc { font-size: 0.9rem; color: #777; margin-bottom: 6px; line-height: 1.4; display: block; }
 
         /* Prezzo */
         .prezzo-container { text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; padding-left: 20px; }
@@ -254,18 +256,6 @@ try {
             color: #b71c1c; 
             font-weight: 600; 
             margin: 0;
-        }
-
-        /* Allergeni */
-        .allergeni-pill {
-            display: inline-block;
-            font-size: 0.75rem;
-            background-color: #fff3e0; 
-            color: #e65100;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-top: 8px;
-            font-weight: 500;
         }
 
         /* Azioni Admin */
@@ -409,8 +399,10 @@ try {
     <p>Dashboard amministrativa &bull; <?= $num_record ?> piatti totali</p>
 </div>
 
-<!-- BARRA NAVIGAZIONE CATEGORIE -->
+<!-- CONTAINER PRINCIPALE -->
 <div class="container-lista">
+    
+    <!-- BARRA NAVIGAZIONE CATEGORIE -->
     <div class="scroll-nav-container">
         <div class="scroll-nav">
             <a href="index.php" class="nav-chip <?= !$categoria_filtro ? 'active' : '' ?>">
@@ -422,17 +414,21 @@ try {
                     <?= htmlspecialchars($cat['nome']) ?>
                 </a>
             <?php endforeach ?>
-            <a href="inserimento.php" class="btn-add-admin">
-                <i class="fas fa-plus"></i> NUOVO
-            </a>
         </div>
+    </div>
+
+    <!-- BOTTONE AGGIUNGI GRANDE (Sotto la navbar) -->
+    <div class="btn-add-big-container">
+        <a href="inserimento.php" class="btn-add-big">
+            <i class="fas fa-plus-circle"></i> AGGIUNGI PRODOTTO
+        </a>
     </div>
 
     <?php if ($msgErrore != 'nessun errore'): ?>
         <div class="error-message"><?= htmlspecialchars($msgErrore) ?></div>
     <?php endif ?>
 
-    <!-- PRODOTTI -->
+    <!-- LISTA PRODOTTI -->
     <div>
         <?php foreach ($ris as $r): ?>
             <div class="product-card">
