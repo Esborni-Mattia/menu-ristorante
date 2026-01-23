@@ -1,11 +1,15 @@
 <?php
 require 'connessione.php';
 
+// --- LOGICA DI RICERCA ---
+$ricerca = isset($_GET['search']) ? trim($_GET['search']) : '';
+$params = [];
+
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // QUERY (Identica alla tua, corretta e ordinata)
+    // Inizio costruzione Query
     $sql = "SELECT 
                 p.id_prodotto, 
                 p.nome, 
@@ -21,17 +25,30 @@ try {
             LEFT JOIN ingrediente_allergene ia ON i.id_ingrediente = ia.id_ingrediente
             LEFT JOIN allergene a ON ia.id_allergene = a.id_allergene
             
-            WHERE p.disponibile = 1
-            GROUP BY p.id_prodotto
-            ORDER BY FIELD(c.nome, 
+            WHERE p.disponibile = 1";
+
+    // Se c'è una ricerca, aggiungo i filtri
+    if ($ricerca) {
+        $sql .= " AND (
+            p.nome LIKE :ricerca OR 
+            p.descrizione LIKE :ricerca OR 
+            i.nome LIKE :ricerca OR 
+            a.nome LIKE :ricerca
+        )";
+        $params[':ricerca'] = '%' . $ricerca . '%';
+    }
+
+    // Continuo con raggruppamento e ordinamento
+    $sql .= " GROUP BY p.id_prodotto
+              ORDER BY FIELD(c.nome, 
                 'Pizza Classica', 'Pizza Gustosa', 'Pizza Speciale', 
                 'Contorno', 
                 'Bevanda analcolica', 'Bevanda alcolica', 'Acqua', 
                 'Dolce'
-            ), p.nome";
+              ), p.nome";
 
     $stm = $pdo->prepare($sql);
-    $stm->execute();
+    $stm->execute($params);
     $prodotti = $stm->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
@@ -67,7 +84,6 @@ foreach ($prodotti as $p) {
     <title>Menu Digitale</title>
     <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
     
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -95,6 +111,55 @@ foreach ($prodotti as $p) {
             margin-bottom: 20px;
         }
 
+        /* --- SEARCH BOX UTENTE --- */
+        .search-box-user {
+            margin: 0 16px 20px 16px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-box-user input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: 0.3s;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .search-box-user input:focus {
+            border-color: #b71c1c;
+            box-shadow: 0 0 5px rgba(183, 28, 28, 0.2);
+        }
+
+        .search-box-user button {
+            background: #b71c1c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .reset-search {
+            background: #757575 !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            color: white;
+            flex-shrink: 0;
+        }
+
         /* --- MENU DI NAVIGAZIONE --- */
         .scroll-nav-container {
             position: sticky;
@@ -117,7 +182,6 @@ foreach ($prodotti as $p) {
         }
         .scroll-nav::-webkit-scrollbar { display: none; }
         
-        /* Spaziatore finale per mobile */
         .scroll-nav::after {
             content: '';
             min-width: 20px;
@@ -146,17 +210,16 @@ foreach ($prodotti as $p) {
             border-color: #b71c1c;
         }
 
-        /* --- MEDIA QUERY: RESPONSIVITÀ BARRA NAVIGAZIONE --- */
-        /* Su schermi più larghi (es. tablet/PC), la barra si estende e va a capo */
         @media (min-width: 700px) {
             .scroll-nav {
-                flex-wrap: wrap;       /* Permette di andare a capo */
-                justify-content: center; /* Centra i tasti */
-                overflow-x: visible;   /* Rimuove lo scroll orizzontale */
+                flex-wrap: wrap;       
+                justify-content: center; 
+                overflow-x: visible;   
                 white-space: normal;
             }
-            .scroll-nav::after { display: none; } /* Rimuove lo spaziatore mobile */
-            .nav-chip { margin-bottom: 8px; }     /* Aggiunge spazio verticale tra le righe */
+            .scroll-nav::after { display: none; } 
+            .nav-chip { margin-bottom: 8px; }      
+            .search-box-user { max-width: 500px; margin: 0 auto 20px auto; }
         }
 
         /* --- INTESTAZIONE CATEGORIA --- */
@@ -166,9 +229,6 @@ foreach ($prodotti as $p) {
             padding-left: 10px;
             border-left: 4px solid #b71c1c;
             color: #2c3e50;
-            
-            /* FIX ANCORA PIÙ FORTE PER IL CLIPPING */
-            /* Aumentato a 140px per essere sicuri che il titolo non finisca sotto la barra */
             scroll-margin-top: 140px; 
         }
 
@@ -221,7 +281,6 @@ foreach ($prodotti as $p) {
 </head>
 <body>
 
-    <!-- HERO HEADER -->
     <div class="hero-header">
         <h1 style="margin:0; font-size: 28px;"><i class="fa fa-pizza-slice"></i> Pizzeria BER</h1>
         <p style="margin:5px 0 0 0; opacity: 0.9; font-weight: 300;">Menu Digitale</p>
@@ -229,7 +288,20 @@ foreach ($prodotti as $p) {
 
     <div class="w3-content" style="max-width: 800px;">
 
-        <!-- BARRA DI NAVIGAZIONE SCORREVOLE -->
+        <form method="GET" action="interfaccia_utente.php" class="search-box-user">
+            <input type="text" name="search" placeholder="Cerca piatto, ingrediente, allergene..." 
+                   value="<?= htmlspecialchars($ricerca) ?>">
+            <button type="submit">
+                <i class="fas fa-search"></i>
+            </button>
+            <?php if ($ricerca): ?>
+                <a href="interfaccia_utente.php" class="reset-search" title="Rimuovi filtri">
+                    <i class="fas fa-times"></i>
+                </a>
+            <?php endif; ?>
+        </form>
+
+        <?php if (!empty($listaCategorie)): ?>
         <div class="scroll-nav-container">
             <div class="scroll-nav">
                 <?php foreach($listaCategorie as $catName): 
@@ -241,6 +313,7 @@ foreach ($prodotti as $p) {
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
 
         <div style="padding: 0 16px;">
             <?php 
@@ -253,7 +326,6 @@ foreach ($prodotti as $p) {
                         $categoriaCorrente = $p['categoria'];
                         $anchorId = "cat-" . strtolower(str_replace(' ', '', $categoriaCorrente));
                 ?>
-                    <!-- Titolo Categoria con ID per lo scroll -->
                     <div id="<?= $anchorId ?>" class="cat-title">
                         <h2 style="margin:0; font-size: 22px;">
                             <i class="fa <?= getIconaCategoria($categoriaCorrente) ?> w3-text-red" style="margin-right:8px; font-size: 0.9em;"></i>
@@ -262,15 +334,13 @@ foreach ($prodotti as $p) {
                     </div>
                 <?php endif; ?>
 
-                <!-- Card Prodotto -->
                 <div class="product-card">
                     <div class="w3-row">
-                        <!-- Colonna Sinistra: Info -->
                         <div class="w3-col s9">
                             <div class="prod-nome"><?= htmlspecialchars($p['nome']) ?></div>
                             
                             <?php if(!empty($p['descrizione'])): ?>
-                                <div class="prod-desc">Descrizione: <?= htmlspecialchars($p['descrizione']) ?></div>
+                                <div class="prod-desc"><?= htmlspecialchars($p['descrizione']) ?></div>
                             <?php endif; ?>
 
                             <?php if(!empty($p['ingredienti'])): ?>
@@ -279,12 +349,11 @@ foreach ($prodotti as $p) {
 
                             <?php if(!empty($p['allergeni'])): ?>
                                 <div class="allergeni-pill">
-                                    <i class="fa fa-triangle-exclamation">Allergeni: </i> <?= htmlspecialchars($p['allergeni']) ?>
+                                    <i class="fa fa-triangle-exclamation"></i> <?= htmlspecialchars($p['allergeni']) ?>
                                 </div>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Colonna Destra: Prezzo -->
                         <div class="w3-col s3 prezzo-container">
                             <div class="prezzo-tag"><?= number_format($p['prezzo'], 2) ?>€</div>
                         </div>
@@ -293,9 +362,10 @@ foreach ($prodotti as $p) {
 
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow w3-margin-top w3-round">
-                    <h3>Menu in aggiornamento</h3>
-                    <p>Stiamo impastando nuove idee. Torna tra poco!</p>
+                <div class="w3-panel w3-pale-red w3-leftbar w3-border-red w3-margin-top w3-round" style="padding: 20px; text-align: center;">
+                    <h3><i class="fa fa-search"></i> Nessun risultato</h3>
+                    <p>Non abbiamo trovato nulla che corrisponda a "<strong><?= htmlspecialchars($ricerca) ?></strong>".</p>
+                    <a href="interfaccia_utente.php" class="w3-button w3-red w3-round-large" style="margin-top:10px;">Vedi tutto il menu</a>
                 </div>
             <?php endif; ?>
         </div>

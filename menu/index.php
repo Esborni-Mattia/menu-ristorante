@@ -35,20 +35,32 @@ try {
 // --- CONFIGURAZIONE PAGINAZIONE ---
 $pag_numero = 0; $pag_voci = 10; $pag_offset = 0; $pag_totali = 0; $msgErrore = 'nessun errore';
 $categoria_filtro = isset($_GET['cat']) ? (int)$_GET['cat'] : null;
+$ricerca = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 try {
     $pdo = new PDO($conn_str, $conn_usr, $conn_psw);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
+    // Costruzione query di conteggio con filtri
+    $where_conditions = [];
+    $params = [];
+    
     if ($categoria_filtro) {
-        $sql_count = 'SELECT count(*) FROM prodotto WHERE id_categoria = :cat';
-        $stm = $pdo->prepare($sql_count);
-        $stm->execute([':cat' => $categoria_filtro]);
-    } else {
-        $sql_count = 'SELECT count(*) FROM prodotto';
-        $stm = $pdo->prepare($sql_count);
-        $stm->execute();
+        $where_conditions[] = 'p.id_categoria = :cat';
+        $params[':cat'] = $categoria_filtro;
     }
+    
+    if ($ricerca) {
+        $ricerca_param = '%' . $ricerca . '%';
+        $where_conditions[] = '(p.nome LIKE :ricerca OR p.descrizione LIKE :ricerca)';
+        $params[':ricerca'] = $ricerca_param;
+    }
+    
+    $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+    
+    $sql_count = 'SELECT count(*) FROM prodotto p ' . $where_clause;
+    $stm = $pdo->prepare($sql_count);
+    $stm->execute($params);
     
     $num_record = $stm->fetchColumn();
     $pag_totali = ceil($num_record / $pag_voci);
@@ -59,14 +71,16 @@ try {
     $pag_offset = $pag_numero * $pag_voci;
 
     // Recupero prodotti con nome categoria e disponibilità
-    if ($categoria_filtro) {
+    if ($categoria_filtro || $ricerca) {
         $sql = 'SELECT p.id_prodotto, p.nome, p.prezzo, p.disponibile, c.nome AS categoria
                 FROM prodotto p
                 LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
-                WHERE p.id_categoria = :cat
+                ' . $where_clause . '
                 ORDER BY p.nome ASC LIMIT :voci OFFSET :offset';
         $stm = $pdo->prepare($sql);
-        $stm->bindValue(':cat', $categoria_filtro, PDO::PARAM_INT);
+        foreach ($params as $key => $value) {
+            $stm->bindValue($key, $value);
+        }
         $stm->bindValue(':voci', $pag_voci, PDO::PARAM_INT);
         $stm->bindValue(':offset', $pag_offset, PDO::PARAM_INT);
     } else {
@@ -215,6 +229,76 @@ try {
         }
 
         .btn-add-big i { margin-right: 10px; }
+
+        /* --- BARRA DI RICERCA --- */
+        .search-container {
+            background: #faf9f6;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .search-box input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Roboto', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #b71c1c;
+            box-shadow: 0 0 8px rgba(183, 28, 28, 0.2);
+        }
+
+        .search-box button {
+            padding: 12px 30px;
+            background: #b71c1c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box button:hover {
+            background: #8b0000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
+        }
+
+        .search-box .reset-btn {
+            background: #757575;
+            padding: 12px 20px;
+        }
+
+        .search-box .reset-btn:hover {
+            background: #424242;
+        }
+
+        @media (max-width: 700px) {
+            .search-box {
+                flex-direction: column;
+            }
+            .search-box input,
+            .search-box button {
+                width: 100%;
+            }
+        }
 
         @media (min-width: 700px) {
             .scroll-nav {
@@ -389,27 +473,49 @@ try {
             margin-bottom: 20px;
             border-left: 4px solid #c62828;
         }
+
+        /* --- TASTO AIUTO FLUTTUANTE (NUOVO) --- */
+        .btn-help-float {
+            position: fixed;
+            bottom: 90px; /* Sopra la paginazione */
+            right: 25px;
+            width: 55px;
+            height: 55px;
+            background-color: #0288d1; /* Colore Azzurro Info */
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-decoration: none;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-help-float:hover {
+            background-color: #0277bd;
+            transform: scale(1.1) rotate(10deg);
+        }
     </style>
 </head>
 <body class="has-pagination">
 
-<!-- HERO HEADER -->
 <div class="hero-header">
     <h1>Gestione Menu</h1>
     <p>Dashboard amministrativa &bull; <?= $num_record ?> piatti totali</p>
 </div>
 
-<!-- CONTAINER PRINCIPALE -->
 <div class="container-lista">
     
-    <!-- BARRA NAVIGAZIONE CATEGORIE -->
     <div class="scroll-nav-container">
         <div class="scroll-nav">
             <a href="index.php" class="nav-chip <?= !$categoria_filtro ? 'active' : '' ?>">
                 <i class="fas fa-list"></i> TUTTI
             </a>
             <?php foreach ($categorie as $cat): ?>
-                <a href="index.php?cat=<?= $cat['id_categoria'] ?>" 
+                <a href="index.php?cat=<?= $cat['id_categoria'] ?><?= $ricerca ? '&search=' . urlencode($ricerca) : '' ?>" 
                    class="nav-chip <?= ($categoria_filtro == $cat['id_categoria']) ? 'active' : '' ?>">
                     <?= htmlspecialchars($cat['nome']) ?>
                 </a>
@@ -417,18 +523,35 @@ try {
         </div>
     </div>
 
-    <!-- BOTTONE AGGIUNGI GRANDE (Sotto la navbar) -->
     <div class="btn-add-big-container">
         <a href="inserimento.php" class="btn-add-big">
             <i class="fas fa-plus-circle"></i> AGGIUNGI PRODOTTO
         </a>
     </div>
 
+    <!-- BARRA DI RICERCA -->
+    <div class="search-container">
+        <form method="GET" class="search-box">
+            <input type="text" name="search" placeholder="Cerca per nome, descrizione, ingredienti, allergeni..." 
+                   value="<?= htmlspecialchars($ricerca) ?>">
+            <?php if ($categoria_filtro): ?>
+                <input type="hidden" name="cat" value="<?= $categoria_filtro ?>">
+            <?php endif; ?>
+            <button type="submit">
+                <i class="fas fa-search"></i> Cerca
+            </button>
+            <?php if ($ricerca || $categoria_filtro): ?>
+                <a href="index.php" class="reset-btn" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-times"></i> Ripristina
+                </a>
+            <?php endif; ?>
+        </form>
+    </div>
+
     <?php if ($msgErrore != 'nessun errore'): ?>
         <div class="error-message"><?= htmlspecialchars($msgErrore) ?></div>
     <?php endif ?>
 
-    <!-- LISTA PRODOTTI -->
     <div>
         <?php foreach ($ris as $r): ?>
             <div class="product-card">
@@ -463,16 +586,19 @@ try {
         <?php endforeach ?>
     </div>
 
-    <!-- PAGINAZIONE -->
     <div class="pagination">
         <?php for ($i = 1; $i <= $pag_totali; $i++): ?>
-            <a href="index.php?pag=<?= $i ?><?= $categoria_filtro ? '&cat=' . $categoria_filtro : '' ?>"
+            <a href="index.php?pag=<?= $i ?><?= $categoria_filtro ? '&cat=' . $categoria_filtro : '' ?><?= $ricerca ? '&search=' . urlencode($ricerca) : '' ?>"
                class="<?= ($i == $pag_numero + 1) ? 'active' : '' ?>">
                 <?= $i ?>
             </a>
         <?php endfor; ?>
     </div>
 </div>
+
+<a href="paginaHelp.html" class="btn-help-float" title="Guida e Aiuto">
+    <i class="fas fa-info"></i>
+</a>
 
 <div class="footer-info">
     &copy; 2026 Gestione Menu Ristorante
